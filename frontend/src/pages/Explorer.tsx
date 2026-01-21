@@ -22,10 +22,16 @@ const Explorer = () => {
     ] as const;
 
     return (
-        <div className="page-container">
+        <div className="page-container" style={{ position: 'relative' }}>
+            {/* FLOATING ORBS BACKGROUND */}
+            <div className="background-orbs">
+                <div className="orb orb-1"></div>
+                <div className="orb orb-2"></div>
+                <div className="orb orb-3"></div>
+            </div>
 
             {/* HERO */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 fade-in-up">
                 <h1 className="hero-title">The <span className="text-gradient">Privacy-First</span> Explorer</h1>
                 <p className="text-small" style={{ fontSize: '16px', color: '#888', maxWidth: '600px', margin: '0 auto 40px auto' }}>
                     Track payments and invoices with zero-knowledge privacy.
@@ -43,7 +49,7 @@ const Explorer = () => {
             </div>
 
             {/* STATS GRID */}
-            <div className="grid-cols-5 gap-4 mb-8">
+            <div className="grid-cols-5 gap-4 mb-8 fade-in-up delay-100">
                 {stats.map((stat, i) => (
                     <div key={i} className="glass-card flex-col flex-center" style={{ padding: '24px' }}>
                         <span className="text-label" style={{ marginBottom: '8px' }}>{stat.label}</span>
@@ -53,7 +59,7 @@ const Explorer = () => {
             </div>
 
             {/* TABLE SECTION */}
-            <div className="glass-card" style={{ padding: '0' }}>
+            <div className="glass-card fade-in-up delay-200" style={{ padding: '0' }}>
                 <div style={{
                     display: 'flex',
                     gap: '10px',

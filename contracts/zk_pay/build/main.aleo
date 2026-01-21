@@ -62,3 +62,6 @@ function get_invoice_status:
 finalize get_invoice_status:
     input r0 as field.public;
     get invoices[r0] into r1;
+
+constructor:
+    assert.eq edition 0u16;
