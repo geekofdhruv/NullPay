@@ -54,12 +54,11 @@ const CreateInvoice = () => {
                             className="select-field"
                             value={expiry}
                             onChange={(e) => setExpiry(e.target.value)}
-                            style={{ color: 'white' }}
                         >
-                            <option value="0" style={{ background: 'black' }}>No Expiry (Permanent)</option>
-                            <option value="1" style={{ background: 'black' }}>1 Hour</option>
-                            <option value="24" style={{ background: 'black' }}>24 Hours</option>
-                            <option value="168" style={{ background: 'black' }}>7 Days</option>
+                            <option value="0" style={{ background: '#000' }}>No Expiry (Permanent)</option>
+                            <option value="1" style={{ background: '#000' }}>1 Hour</option>
+                            <option value="24" style={{ background: '#000' }}>24 Hours</option>
+                            <option value="168" style={{ background: '#000' }}>7 Days</option>
                         </select>
                     </div>
 
@@ -69,15 +68,15 @@ const CreateInvoice = () => {
                 </div>
 
                 {createdInvoice && (
-                    <div className="glass-card text-center animate-pulse-green">
-                        <h3 className="text-green mb-4">Invoice Ready!</h3>
+                    <div className="glass-card text-center" style={{ border: '1px solid rgba(255,255,255,0.2)' }}>
+                        <h3 className="mb-4">Invoice Ready!</h3>
                         <div className="flex-center mb-6 p-4 bg-white rounded-xl" style={{ display: 'inline-flex' }}>
                             <QRCodeSVG value={`https://aleozkpay.com/pay/${createdInvoice.hash}`} size={180} />
                         </div>
                         <p className="text-label mb-2">Invoice Hash</p>
                         <div className="input-field mb-4 flex-between">
                             <span style={{ fontFamily: 'monospace' }}>{createdInvoice.hash}</span>
-                            <span className="text-green" style={{ cursor: 'pointer' }}>COPY</span>
+                            <span style={{ cursor: 'pointer', fontWeight: 'bold' }}>COPY</span>
                         </div>
                         <button className="btn-secondary w-full">Share Link</button>
                     </div>

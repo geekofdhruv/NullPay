@@ -23,13 +23,8 @@ const PaymentPage = () => {
 
                 {/* STATUS HEADER */}
                 <div className="text-center mb-8">
-                    {step === 4 ? (
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-                    ) : (
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>💸</div>
-                    )}
-                    <h1 className="text-gradient">
-                        {step === 4 ? 'Payment Successful!' : 'Pay Invoice'}
+                    <h1 className="text-gradient" style={{ fontSize: '36px' }}>
+                        {step === 4 ? 'Payment Successful' : 'Pay Invoice'}
                     </h1>
                 </div>
 
@@ -42,7 +37,7 @@ const PaymentPage = () => {
                         </div>
                         <div className="flex-between mb-2">
                             <span className="text-label">Amount</span>
-                            <span className="text-xl text-green">{invoice.amount}</span>
+                            <span className="text-xl text-highlight">{invoice.amount}</span>
                         </div>
                         <div className="flex-between">
                             <span className="text-label">Memo</span>
@@ -53,15 +48,15 @@ const PaymentPage = () => {
                     {/* STEPS */}
                     {step === 4 ? (
                         <div className="text-center">
-                            <p className="text-gray mb-6">The transaction has been settled on-chain verification.</p>
+                            <p className="text-small mb-6">The transaction has been settled on-chain verification.</p>
                             <button className="btn-primary">View Transaction</button>
                         </div>
                     ) : (
                         <div>
                             <div className="flex-between mb-6">
-                                <div className={`text-label ${step >= 1 ? 'text-green' : ''}`}>1. Connect</div>
-                                <div className={`text-label ${step >= 2 ? 'text-green' : ''}`}>2. Appprove</div>
-                                <div className={`text-label ${step >= 3 ? 'text-green' : ''}`}>3. Verify</div>
+                                <span className={`text-label ${step >= 1 ? 'text-highlight' : ''}`}>1. Connect</span>
+                                <span className={`text-label ${step >= 2 ? 'text-highlight' : ''}`}>2. Approve</span>
+                                <span className={`text-label ${step >= 3 ? 'text-highlight' : ''}`}>3. Verify</span>
                             </div>
 
                             <button

@@ -8,26 +8,32 @@ const Navbar = () => {
         <nav className="navbar">
             <div className="container-custom flex-between" style={{ height: '100%' }}>
                 {/* LOGO */}
-                <div className="flex-center" style={{ gap: '14px' }}>
-                    <div style={{
-                        width: 42,
-                        height: 42,
-                        background: 'linear-gradient(135deg, #00ff88, #00d4aa)',
-                        borderRadius: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: '900',
-                        fontSize: 24,
-                        color: 'black',
-                        boxShadow: '0 0 15px rgba(0,255,136,0.3)'
-                    }}>
-                        ⚡
+                <Link to="/" style={{ textDecoration: 'none' }}>
+                    <div className="flex-center" style={{ gap: '12px' }}>
+                        <div style={{
+                            width: 32,
+                            height: 32,
+                            background: '#fff',
+                            borderRadius: 8,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 0 20px rgba(255,255,255,0.2)'
+                        }}>
+                            <div style={{
+                                width: 12,
+                                height: 12,
+                                border: '2px solid black',
+                                transform: 'rotate(45deg)'
+                            }} />
+                        </div>
+                        <div className="flex-col">
+                            <span style={{ fontSize: 20, fontWeight: '700', color: 'white', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                                AleoZKPay
+                            </span>
+                        </div>
                     </div>
-                    <span style={{ fontSize: 26, fontWeight: '800', color: 'white', letterSpacing: '-0.5px' }}>
-                        Aleo<span style={{ color: '#00ff88' }}>ZK</span>Pay
-                    </span>
-                </div>
+                </Link>
 
                 {/* NAVIGATION */}
                 <div className="nav-links">
@@ -39,10 +45,9 @@ const Navbar = () => {
                 {/* CONNECT BUTTON */}
                 <button className="btn-connect">
                     <span>Connect Wallet</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-                        <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                 </button>
             </div>

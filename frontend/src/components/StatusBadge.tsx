@@ -3,21 +3,64 @@ interface StatusBadgeProps {
 }
 
 const StatusBadge = ({ status }: StatusBadgeProps) => {
+    // Premium Monochrome Styles
     const styles = {
-        PENDING: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)]',
-        SETTLED: 'bg-green-500/10 text-green-400 border-green-500/20 shadow-[0_0_10px_rgba(74,222,128,0.1)]',
-        EXPIRED: 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]',
+        PENDING: {
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: '#ccc',
+            boxShadow: 'none'
+        },
+        SETTLED: {
+            background: '#ffffff',
+            border: '1px solid #ffffff',
+            color: '#000000',
+            boxShadow: '0 0 15px rgba(255, 255, 255, 0.4)'
+        },
+        EXPIRED: {
+            background: 'transparent',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            color: '#555',
+            textDecoration: 'line-through'
+        },
+    };
+    const dotStyles = {
+        PENDING: {
+            background: '#ccc',
+            boxShadow: '0 0 5px rgba(200, 200, 200, 0.5)'
+        },
+        SETTLED: {
+            background: '#000',
+        },
+        EXPIRED: {
+            background: '#555',
+        },
     };
 
-    const dotColor = {
-        PENDING: 'bg-yellow-400',
-        SETTLED: 'bg-green-400',
-        EXPIRED: 'bg-red-400',
-    };
+    const currentStyle = styles[status];
+    const currentDotStyle = dotStyles[status];
 
     return (
-        <span className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-md ${styles[status]}`}>
-            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${dotColor[status]}`}></span>
+        <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '4px 12px',
+            borderRadius: '99px',
+            fontSize: '11px',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.3s ease',
+            ...currentStyle
+        }}>
+            <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                ...currentDotStyle
+            }}></span>
             <span>{status}</span>
         </span>
     );
