@@ -11,18 +11,18 @@ import {
 import "@demox-labs/aleo-wallet-adapter-reactui/styles.css";
 
 interface AleoWalletProviderProps {
-  children: React.ReactNode;
+    children: React.ReactNode;
 }
 
 export const AleoWalletProvider = ({ children }: AleoWalletProviderProps) => {
-  const wallets = useMemo(
-    () => [
-      new LeoWalletAdapter({
-        appName: 'AleoZKPay',
-      }),
-    ],
-    []
-  );
+    const wallets = useMemo(
+        () => [
+            new LeoWalletAdapter({
+                appName: 'AleoZKPay',
+            }),
+        ],
+        []
+    );
 
     return (
         <WalletProvider
@@ -32,7 +32,7 @@ export const AleoWalletProvider = ({ children }: AleoWalletProviderProps) => {
             autoConnect
         >
             <WalletModalProvider>
-        /{children}
+                {children}
             </WalletModalProvider>
         </WalletProvider>
     );
