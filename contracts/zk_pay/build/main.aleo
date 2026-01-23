@@ -1,5 +1,5 @@
 import credits.aleo;
-program zk_pay_proofs_privacy_v2.aleo;
+program zk_pay_proofs_privacy_v3.aleo;
 
 struct InvoiceData:
     expiry_height as u32;
@@ -13,7 +13,7 @@ function create_invoice:
     input r0 as field.public;
     input r1 as u32.public;
     async create_invoice r0 r1 into r2;
-    output r2 as zk_pay_proofs_privacy_v2.aleo/create_invoice.future;
+    output r2 as zk_pay_proofs_privacy_v3.aleo/create_invoice.future;
 
 finalize create_invoice:
     input r0 as field.public;
@@ -32,16 +32,16 @@ function pay_invoice:
     input r3 as field.private;
     input r4 as field.public;
     call credits.aleo/transfer_private r0 r1 r2 into r5 r6;
-    hash.bhp256 r1 into r7 as field;
-    hash.bhp256 r2 into r8 as field;
-    hash.bhp256 r3 into r9 as field;
+    hash.psd8 r1 into r7 as field;
+    hash.psd8 r2 into r8 as field;
+    hash.psd8 r3 into r9 as field;
     add r7 r8 into r10;
     add r10 r9 into r11;
     assert.eq r4 r11;
     async pay_invoice r4 into r12;
     output r5 as credits.aleo/credits.record;
     output r6 as credits.aleo/credits.record;
-    output r12 as zk_pay_proofs_privacy_v2.aleo/pay_invoice.future;
+    output r12 as zk_pay_proofs_privacy_v3.aleo/pay_invoice.future;
 
 finalize pay_invoice:
     input r0 as field.public;
@@ -60,7 +60,7 @@ finalize pay_invoice:
 function get_invoice_status:
     input r0 as field.public;
     async get_invoice_status r0 into r1;
-    output r1 as zk_pay_proofs_privacy_v2.aleo/get_invoice_status.future;
+    output r1 as zk_pay_proofs_privacy_v3.aleo/get_invoice_status.future;
 
 finalize get_invoice_status:
     input r0 as field.public;

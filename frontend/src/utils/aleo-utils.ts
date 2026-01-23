@@ -1,7 +1,6 @@
-import { BHP256, Address, Field, U64 } from '@provablehq/sdk';
+import { Poseidon2, Address, Field } from '@provablehq/sdk';
 
 export const generateSalt = (): string => {
-    // Generate a random BigInt and convert to field string format
     console.log('generateSalt function called');
 
     const randomBuffer = new Uint8Array(16);
@@ -12,40 +11,37 @@ export const generateSalt = (): string => {
     }
     console.log('generateSalt function returned');
     return `${randomBigInt}field`;
-
 };
 
-/**
- * Computes the invoice hash using local Leo program execution.
- * @param merchant Merchant address (e.g., aleo1...)
- * @param amount Amount in u64
- * @param salt Random salt field
- * @returns The computed hash field
- */
 export const createInvoiceHash = async (merchant: string, amount: number, salt: string): Promise<string> => {
     try {
-        console.log('Computing invoice hash (BHP256 Summation)...');
-        const hasher = new BHP256();
+        console.log('Computing invoice hash (Poseidon2)...');
+        const hasher = new Poseidon2();
         console.log(`Parsing inputs: Merchant=${merchant}, Amount=${amount}, Salt=${salt}`);
         const merchantAddr = Address.from_string(merchant);
-        const amountU64 = U64.fromString(`${amount}u64`);
 
-        // Field requires 'field' suffix (already in salt)
+        const microcredits = Math.round(amount * 1_000_000);
+
+        // Convert to Fields for Poseidon Hashing
+        // 1. Merchant Address -> Field[]
+        const merchantFields = merchantAddr.toFields();
+
+        // 2. Amount -> Field (Leo casts u64 to field for hashing)
+        const amountField = Field.fromString(`${microcredits}field`);
+
+        // 3. Salt -> Field
         const saltField = Field.fromString(salt);
 
-        // 2. Hash each component
-        // BHP256 hasher expects boolean array (bits) inputs
-        const hashMerchant = hasher.hash(merchantAddr.toBitsLe());
-        const hashAmount = hasher.hash(amountU64.toBitsLe());
-        const hashSalt = hasher.hash(saltField.toBitsLe());
+        // Hash each component
+        // Note: hasher.hash() returns a Field object directly (based on linter feedback)
+        const hashMerchant = hasher.hash(merchantFields);
+        const hashAmount = hasher.hash([amountField]); // Hash single field array
+        const hashSalt = hasher.hash([saltField]);
 
-        // 3. Sum them up (Field addition)
         const finalHash = hashMerchant.add(hashAmount).add(hashSalt);
-
         const result = finalHash.toString();
         console.log("Hash computed:", result);
         return result;
-
     } catch (error) {
         console.error("Error computing hash:", error);
         throw error;

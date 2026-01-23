@@ -2,17 +2,23 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export interface Invoice {
     invoice_hash: string;
-    status: 'PENDING' | 'SETTLED';
+    status: 'PENDING' | 'SETTLED' | 'EXPIRED'; // Added EXPIRED for completeness
     block_height: number;
     block_settled?: number;
     transaction_id?: string;
     created_at?: string;
+    merchant?: string;
+    amount?: number;
+    memo?: string;
 }
 
-export const fetchInvoices = async (status?: string): Promise<Invoice[]> => {
+export const fetchInvoices = async (filters?: { status?: string; merchant?: string }): Promise<Invoice[]> => {
     const url = new URL(`${API_URL}/invoices`);
-    if (status) {
-        url.searchParams.append('status', status);
+    if (filters?.status) {
+        url.searchParams.append('status', filters.status);
+    }
+    if (filters?.merchant) {
+        url.searchParams.append('merchant', filters.merchant);
     }
 
     const response = await fetch(url.toString());

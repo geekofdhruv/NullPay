@@ -1,86 +1,128 @@
+import { useWallet } from '@demox-labs/aleo-wallet-adapter-react';
+import { WalletMultiButton } from '@demox-labs/aleo-wallet-adapter-reactui';
+import { useState, useEffect } from 'react';
 import StatusBadge from '../components/StatusBadge';
+import { fetchInvoices, Invoice } from '../services/api';
 
 const Profile = () => {
-    const merchant = {
-        address: 'aleo1...9xyz',
-        balance: '5,420 USDC',
-        totalSales: '150,000 USDC',
-        invoices: 45
+    const { publicKey } = useWallet();
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (publicKey) {
+            loadMerchantData();
+        }
+    }, [publicKey]);
+
+    const loadMerchantData = async () => {
+        if (!publicKey) return;
+        setLoading(true);
+        try {
+            const data = await fetchInvoices({ merchant: publicKey });
+            setInvoices(data);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const myInvoices = [
-        { id: '#1001', amount: '500 USDC', status: 'SETTLED', date: '2023-10-25' },
-        { id: '#1002', amount: '120 USDC', status: 'PENDING', date: '2023-10-26' },
-        { id: '#1003', amount: '2,000 USDC', status: 'SETTLED', date: '2023-10-27' },
-    ];
+    if (!publicKey) {
+        return (
+            <div className="page-container flex-center flex-col text-center" style={{ minHeight: '60vh' }}>
+                <h1 className="hero-title mb-6">Merchant <span className="text-gradient">Profile</span></h1>
+                <p className="text-small mb-8">Connect your wallet to view your invoice history.</p>
+                <WalletMultiButton />
+            </div>
+        );
+    }
+
+    const totalVolume = invoices.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const settledCount = invoices.filter(i => i.status === 'SETTLED').length;
 
     return (
         <div className="page-container">
-            {/* HEADER */}
-            <div className="flex-between mb-8">
+            <div className="flex-between mb-8 fade-in-up">
                 <div>
-                    <h1 className="text-gradient" style={{ fontSize: '32px' }}>Merchant Dashboard</h1>
-                    <p className="text-label">Manage your earnings and invoices</p>
+                    <h1 className="hero-title" style={{ fontSize: '32px', marginBottom: '8px' }}>My Profile</h1>
+                    <p className="text-small text-xs break-all font-mono opacity-60">
+                        {publicKey}
+                    </p>
                 </div>
-                <div className="glass-card flex-center" style={{ padding: '12px 24px', borderRadius: '99px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <span style={{
-                        display: 'inline-block', width: '8px', height: '8px', background: '#fff', borderRadius: '50%', marginRight: '12px',
-                        boxShadow: '0 0 10px rgba(255,255,255,0.5)'
-                    }}></span>
-                    <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>{merchant.address}</span>
-                </div>
-            </div>
-
-            {/* STATS */}
-            <div className="grid-cols-5 mb-8" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                <div className="glass-card">
-                    <span className="text-label">Wallet Balance</span>
-                    <h2 className="text-highlight" style={{ fontSize: '36px' }}>{merchant.balance}</h2>
-                </div>
-                <div className="glass-card">
-                    <span className="text-label">Total Sales Volume</span>
-                    <h2 style={{ fontSize: '36px' }}>{merchant.totalSales}</h2>
-                </div>
-                <div className="glass-card">
-                    <span className="text-label">Total Invoices</span>
-                    <h2 style={{ fontSize: '36px' }}>{merchant.invoices}</h2>
+                <div className="text-right">
+                    <span className="text-label block mb-1">Total Received</span>
+                    <span className="text-highlight text-3xl">{totalVolume} Credits</span>
                 </div>
             </div>
 
-            {/* INVOICE HISTORY */}
-            <div className="glass-card" style={{ padding: '0' }}>
-                <div className="flex-between" style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <h3>Recent Invoices</h3>
-                    <button className="btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>Download CSV</button>
+            <div className="grid-cols-3 gap-6 mb-12 fade-in-up delay-100">
+                <div className="glass-card p-6">
+                    <span className="text-label block mb-2">Total Invoices</span>
+                    <span className="text-2xl">{invoices.length}</span>
+                </div>
+                <div className="glass-card p-6">
+                    <span className="text-label block mb-2">Settled</span>
+                    <span className="text-2xl text-green-400">{settledCount}</span>
+                </div>
+                <div className="glass-card p-6">
+                    <span className="text-label block mb-2">Pending</span>
+                    <span className="text-2xl text-yellow-500">{invoices.length - settledCount}</span>
+                </div>
+            </div>
+
+            <div className="glass-card fade-in-up delay-200">
+                <div className="flex-between mb-6">
+                    <h3 className="text-xl font-bold">Recent Invoices</h3>
+                    <button className="btn-secondary text-xs p-2" onClick={loadMerchantData}>Refresh</button>
                 </div>
 
                 <div className="table-container">
-                    <table className="invoice-table">
-                        <thead>
-                            <tr>
-                                <th>Invoice ID</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th style={{ textAlign: 'right' }}>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {myInvoices.map((inv, i) => (
-                                <tr key={i}>
-                                    <td style={{ fontFamily: 'monospace', color: '#888' }}>{inv.id}</td>
-                                    <td style={{ fontWeight: '600', color: '#fff' }}>{inv.amount}</td>
-                                    <td>
-                                        <StatusBadge status={inv.status as any} />
-                                    </td>
-                                    <td className="text-label">{inv.date}</td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <button style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '500', opacity: 0.8 }}>View Details</button>
-                                    </td>
+                    {loading ? (
+                        <div className="p-8 text-center text-label">Loading history...</div>
+                    ) : invoices.length === 0 ? (
+                        <div className="p-8 text-center text-label">No invoices created yet.</div>
+                    ) : (
+                        <table className="invoice-table">
+                            <thead>
+                                <tr>
+                                    <th>Hash</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th style={{ textAlign: 'right' }}>Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {invoices.map((inv, i) => (
+                                    <tr key={i}>
+                                        <td className="font-mono text-white text-sm">
+                                            {inv.invoice_hash.slice(0, 10)}...
+                                        </td>
+                                        <td className="text-highlight">
+                                            {inv.amount ? `${inv.amount}` : '-'}
+                                        </td>
+                                        <td><StatusBadge status={inv.status as any} /></td>
+                                        <td className="text-xs text-label">
+                                            {inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td className="text-right">
+                                            {inv.transaction_id && (
+                                                <a
+                                                    href={`https://testnet.explorer.provable.com/transaction/${inv.transaction_id}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="text-primary hover:underline text-xs"
+                                                >
+                                                    View TX
+                                                </a>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

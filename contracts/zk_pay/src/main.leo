@@ -1,6 +1,6 @@
 import credits.aleo;
 
-program zk_pay_proofs_privacy_v2.aleo {
+program zk_pay_proofs_privacy_v3.aleo {
 
     @noupgrade
     async constructor() {
@@ -47,9 +47,9 @@ program zk_pay_proofs_privacy_v2.aleo {
         let (r1, r2): (credits.aleo/credits, credits.aleo/credits) = 
             credits.aleo/transfer_private(pay_record, merchant, amount);
 
-        let hash_merchant: field = BHP256::hash_to_field(merchant);
-        let hash_amount: field = BHP256::hash_to_field(amount);
-        let hash_salt: field = BHP256::hash_to_field(salt);
+        let hash_merchant: field = Poseidon8::hash_to_field(merchant);
+        let hash_amount: field = Poseidon8::hash_to_field(amount);
+        let hash_salt: field = Poseidon8::hash_to_field(salt);
 
         let computed_hash: field =
             hash_merchant + hash_amount + hash_salt;

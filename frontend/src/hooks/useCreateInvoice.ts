@@ -49,7 +49,7 @@ export const useCreateInvoice = () => {
                 address: merchant,
                 chainId: WalletAdapterNetwork.TestnetBeta,
                 transitions: [{
-                    program: 'zk_pay_proofs_privacy_v2.aleo',
+                    program: 'zk_pay_proofs_privacy_v3.aleo',
                     functionName: 'create_invoice',
                     inputs: [hash, `${expiry}u32`]
                 }],
@@ -60,7 +60,8 @@ export const useCreateInvoice = () => {
             const transactionId = await requestTransaction(transaction);
 
             if (transactionId) {
-                // 4. Generate Link
+                // Generate payment link - but don't sync to backend yet
+                // The transaction might fail on-chain, so we wait for confirmation
                 const params = new URLSearchParams({
                     merchant,
                     amount: amount.toString(),
@@ -78,7 +79,7 @@ export const useCreateInvoice = () => {
                     hash,
                     link
                 });
-                setStatus(`Invoice created! TX ID: ${transactionId}`);
+                setStatus(`Invoice created! TX ID: ${transactionId}. Verify in wallet before sharing link.`);
             }
 
         } catch (error: any) {
