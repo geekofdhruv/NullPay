@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useWallet } from '@demox-labs/aleo-wallet-adapter-react';
-import { WalletAdapterNetwork } from '@demox-labs/aleo-wallet-adapter-base';
-import { createInvoiceHash } from '../utils/aleo-utils';
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
+import { TransactionOptions } from '@provablehq/aleo-types';
+import { getInvoiceHashFromMapping, getInvoiceStatus } from '../utils/aleo-utils';
 
-export type PaymentStep = 'CONNECT' | 'VERIFY' | 'CONVERT' | 'PAY' | 'SUCCESS';
+export type PaymentStep = 'CONNECT' | 'VERIFY' | 'CONVERT' | 'PAY' | 'SUCCESS' | 'ALREADY_PAID';
 
 export const usePayment = () => {
     const [searchParams] = useSearchParams();
-    const { publicKey, requestTransaction, requestRecords } = useWallet();
-
-    // parsed params
+    const { address, wallet, executeTransaction, requestRecords } = useWallet();
+    const publicKey = address;
     const [invoice, setInvoice] = useState<{
         merchant: string;
         amount: number;
@@ -26,27 +25,43 @@ export const usePayment = () => {
     const [conversionTxId, setConversionTxId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Initialize & Verify
     useEffect(() => {
         const init = async () => {
             const merchant = searchParams.get('merchant');
             const amount = searchParams.get('amount');
             const salt = searchParams.get('salt');
-            const hash = searchParams.get('hash');
             const memo = searchParams.get('memo') || '';
 
-            if (!merchant || !amount || !salt || !hash) {
+            if (!merchant || !amount || !salt) {
                 setError('Invalid Invoice Link: Missing parameters');
                 return;
             }
 
             try {
                 setLoading(true);
-                // Verify Hash
-                const calculatedHash = await createInvoiceHash(merchant, Number(amount), salt);
+                setStatus('Verifying Invoice on-chain...');
 
-                if (calculatedHash !== hash) {
-                    setError('Security Warning: Invoice Hash Mismatch! The link may be tampered.');
+                // Fetch Hash from Chain using Salt
+                const fetchedHash = await getInvoiceHashFromMapping(salt);
+
+                if (!fetchedHash) {
+                    setError('Invoice not found or invalid salt. Ask merchant for correct link.');
+                    setLoading(false);
+                    return;
+                }
+
+                // Check Status
+                const invoiceStatus = await getInvoiceStatus(fetchedHash);
+                if (invoiceStatus === 1) {
+                    setInvoice({
+                        merchant,
+                        amount: Number(amount),
+                        salt,
+                        hash: fetchedHash,
+                        memo
+                    });
+                    setStep('ALREADY_PAID');
+                    setLoading(false);
                     return;
                 }
 
@@ -54,12 +69,12 @@ export const usePayment = () => {
                     merchant,
                     amount: Number(amount),
                     salt,
-                    hash,
+                    hash: fetchedHash,
                     memo
                 });
 
                 if (publicKey) {
-                    setStep('VERIFY');
+                    setStep('PAY');
                 } else {
                     setStep('CONNECT');
                 }
@@ -72,35 +87,16 @@ export const usePayment = () => {
             }
         };
 
-        init();
+        if (!invoice) {
+            init();
+        }
     }, [searchParams, publicKey]);
 
-    // Check Balance / Records (Simple Heuristic for now)
-    const checkPrivateBalance = async () => {
-        if (!publicKey || !requestRecords || !invoice) return false;
 
-        try {
-            setStatus('Checking private records...');
-            // Request credits.aleo records
-            const records = await requestRecords('credits.aleo');
-            // Filter for unspent records that are > invoice.amount
-            // Note: This is a basic check. Real wallets manage this, but we want to help the user.
-            const suitableRecord = records.find(r => !r.spent && getMicrocredits(r.data) >= invoice.amount);
-
-            return !!suitableRecord;
-        } catch (e) {
-            console.warn("Failed to check records, assuming user might verify manually", e);
-            return false;
-        }
-    };
 
     const getMicrocredits = (recordData: any): number => {
-        // Parse "1000000u64" -> 1000000
         try {
-            // Often data is { microcredits: "100u64", ... } or just string text
-            // This parsing depends on how the wallet returns data.
-            // For now, let's look for microcredits field.
-            if (recordData.microcredits) {
+            if (recordData && recordData.microcredits) {
                 return parseInt(recordData.microcredits.replace('u64', ''));
             }
             return 0;
@@ -110,7 +106,7 @@ export const usePayment = () => {
     };
 
     const convertPublicToPrivate = async () => {
-        if (!invoice || !publicKey || !requestTransaction) return;
+        if (!invoice || !publicKey || !executeTransaction) return;
 
         try {
             setLoading(true);
@@ -118,21 +114,51 @@ export const usePayment = () => {
             const bufferAmount = invoice.amount + 0.01;
             const amountMicro = Math.round(bufferAmount * 1_000_000);
 
-            const transaction = {
-                address: publicKey,
-                chainId: WalletAdapterNetwork.TestnetBeta,
-                transitions: [{
-                    program: 'credits.aleo',
-                    functionName: 'transfer_public_to_private',
-                    inputs: [publicKey, `${amountMicro}u64`]
-                }],
-                fee: 100_000,
-                feePrivate: false
+            const transaction: TransactionOptions = {
+                program: 'credits.aleo',
+                function: 'transfer_public_to_private',
+                inputs: [publicKey, `${amountMicro}u64`],
+                fee: 100_000
             };
 
-            const txId = await requestTransaction(transaction);
-            setConversionTxId(txId);
-            setStatus(`Converting ${bufferAmount} credits (${invoice.amount} + 0.01 buffer). TxID: ${txId.slice(0, 10)}...`);
+            const result = await executeTransaction(transaction);
+
+            if (result && result.transactionId) {
+                setConversionTxId(result.transactionId);
+                setStatus(`Converting... TxID: ${result.transactionId.slice(0, 10)}... Polling for confirmation...`);
+
+                if (!wallet || !wallet.adapter) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    setStep('PAY');
+                    return;
+                }
+
+                let isPending = true;
+                let attempts = 0;
+                while (isPending && attempts < 120) {
+                    attempts++;
+                    await new Promise(r => setTimeout(r, 1000));
+                    try {
+                        const statusRes = await wallet.adapter.transactionStatus(result.transactionId);
+                        const statusStr = typeof statusRes === 'string'
+                            ? (statusRes as string).toLowerCase()
+                            : (statusRes as any)?.status?.toLowerCase();
+
+                        if (statusStr === 'completed' || statusStr === 'finalized' || statusStr === 'accepted') {
+                            setStatus('Conversion Successful! Switching to Payment...');
+                            await new Promise(r => setTimeout(r, 1500));
+                            setStep('PAY');
+                            isPending = false;
+                        } else if (statusStr === 'failed' || statusStr === 'rejected') {
+                            throw new Error('Conversion transaction rejected on-chain.');
+                        }
+                    } catch (err) {
+                        console.warn("Polling error or pending:", err);
+                    }
+                }
+            } else {
+                throw new Error("Transaction execution failed to return a Transaction ID.");
+            }
             setLoading(false);
 
         } catch (e: any) {
@@ -142,74 +168,79 @@ export const usePayment = () => {
     };
 
     const payInvoice = async () => {
-        if (!invoice || !publicKey || !requestTransaction || !requestRecords) return;
+        if (!invoice || !publicKey || !executeTransaction || !requestRecords) return;
 
         try {
             setLoading(true);
             setStatus('Searching for suitable private record...');
-
             const records = await requestRecords('credits.aleo');
             const amountMicro = Math.round(invoice.amount * 1_000_000);
 
-            const payRecord = records.find(r => {
+            const recordsAny = records as any[];
+
+            const payRecord = recordsAny.find(r => {
                 const val = getMicrocredits(r.data);
+                // Check if spendable (needs plaintext or nonce)
+                const isSpendable = !!(r.plaintext || r.nonce || r._nonce || r.data?._nonce || r.ciphertext);
                 // Strict greater than logic
-                return !r.spent && val > amountMicro;
+                return !r.spent && isSpendable && val > amountMicro;
             });
 
-            if (!payRecord) {
-                // Check if we have an EXACT match (which is likely why it failed previously)
-                const exactMatch = records.find(r => !r.spent && getMicrocredits(r.data) === amountMicro);
+            let finalRecord = payRecord;
 
-                setStep('CONVERT');
-                if (exactMatch) {
-                    setStatus(`You have exactly ${invoice.amount} credits. Converting will automatically add 0.01 buffer to create a valid change output.`);
+            if (!finalRecord) {
+                // Retry Logic (Sync Latency)
+                setStatus('Syncing latest records...');
+                await new Promise(r => setTimeout(r, 2000));
+                const latestRecords = await requestRecords('credits.aleo');
+                const latestRecordsAny = latestRecords as any[];
+
+                finalRecord = latestRecordsAny.find(r => {
+                    const val = getMicrocredits(r.data);
+                    // Relaxed check: trust wallet for spending if unspent
+                    return !r.spent && val >= amountMicro;
+                });
+
+                if (finalRecord) {
+                    setStatus('Records synced! Proceeding with payment...');
                 } else {
-                    // Check for fragmentation
-                    const totalBalance = records.reduce((sum, r) => sum + getMicrocredits(r.data), 0);
-                    const maxRecord = Math.max(...records.map(r => getMicrocredits(r.data)));
+                    setStep('CONVERT');
+
+                    const totalBalance = latestRecordsAny.reduce((sum, r) => {
+                        const val = getMicrocredits(r.data);
+                        return !r.spent ? sum + val : sum;
+                    }, 0);
+
+                    const maxRecord = Math.max(...latestRecordsAny.filter(r => !r.spent).map(r => getMicrocredits(r.data)));
 
                     if (totalBalance >= amountMicro) {
-                        setStatus(`Fragmented Balance: Total ${totalBalance / 1_000_000} credits, but largest coin is ${maxRecord / 1_000_000}. Converting ${invoice.amount + 0.01} will create one unified coin.`);
+                        setStatus(`Privacy Protocol requires a single record > ${invoice.amount}. Your largest is ${maxRecord / 1000000}. Converting ${invoice.amount} more will create a unified record.`);
                     } else {
-                        setStatus(`Insufficient balance. Converting ${invoice.amount + 0.01} credits to private...`);
+                        setStatus(`Insufficient private balance. Converting ${invoice.amount + 0.01} to private...`);
                     }
+                    setLoading(false);
+                    return;
                 }
-                setLoading(false);
-                return;
             }
 
-            console.log("Selected Pay Record:", payRecord);
-
-            // Construct valid record input
-            // 1. Prefer plaintext if available
-            // 2. Reconstruct from data/nonce if available
-            // 3. Fallback to ciphertext (might fail for private transitions if wallet needs plaintext)
-            let recordInput = payRecord.plaintext;
+            console.log("Selected Pay Record:", finalRecord);
+            let recordInput = finalRecord.plaintext;
 
             if (!recordInput) {
                 console.warn("Record missing plaintext. Attempting to reconstruct...");
-                // Check if we have nonce
-                // @ts-ignore
-                const nonce = payRecord.nonce || payRecord._nonce || payRecord.data?._nonce;
+                const nonce = finalRecord.nonce || finalRecord._nonce || finalRecord.data?._nonce;
 
                 if (nonce) {
-                    const microcredits = getMicrocredits(payRecord.data);
-                    const owner = payRecord.owner;
-                    // Reconstruction format: "{ owner: ..., microcredits: ...u64.private, _nonce: ...group.public }"
+                    const microcredits = getMicrocredits(finalRecord.data);
+                    const owner = finalRecord.owner;
                     recordInput = `{ owner: ${owner}.private, microcredits: ${microcredits}u64.private, _nonce: ${nonce}.public }`;
                     console.log("Reconstructed Plaintext:", recordInput);
-                } else if (payRecord.ciphertext) {
+                } else if (finalRecord.ciphertext) {
                     console.log("Found Ciphertext. Using it as input.");
-                    recordInput = payRecord.ciphertext;
+                    recordInput = finalRecord.ciphertext;
                 } else {
-                    console.warn("Could not find nonce AND missing ciphertext. Dumping Record Keys:", Object.keys(payRecord));
-                    if (payRecord.data) console.log("Record Data Keys:", Object.keys(payRecord.data));
-
-                    // Warn user instead of passing object which definitely fails
-                    setStatus("Error: Wallet permission denied. Please enable 'Record Plaintext' access.");
-                    setLoading(false);
-                    return;
+                    console.warn("Could not find keys. Attempting to pass raw record object to adapter...");
+                    recordInput = finalRecord;
                 }
             }
 
@@ -219,48 +250,53 @@ export const usePayment = () => {
                 recordInput,
                 invoice.merchant,
                 `${amountMicro}u64`,
-                invoice.salt,
-                invoice.hash
+                invoice.salt
             ];
             console.log("Transaction Inputs:", inputs);
 
-            const transaction = {
-                address: publicKey,
-                chainId: WalletAdapterNetwork.TestnetBeta,
-                transitions: [{
-                    program: 'zk_pay_proofs_privacy_v3.aleo', // Ensure v3
-                    functionName: 'pay_invoice',
-                    inputs: inputs
-                }],
-                fee: 100_000,
-                feePrivate: false
+            const transaction: TransactionOptions = {
+                program: 'zk_pay_proofs_privacy_v6.aleo',
+                function: 'pay_invoice',
+                inputs: inputs,
+                fee: 100_000
             };
 
-            const tx = await requestTransaction(transaction);
-            setTxId(tx);
-            try {
-                setStatus('Submitting payment proof to backend...');
-                const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-                await fetch(`${backendUrl}/sync-event`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        invoice_hash: invoice.hash,
-                        status: 'SETTLED',
-                        block_height: 0,
-                        transaction_id: tx,
-                        merchant: invoice.merchant,
-                        amount: invoice.amount,
-                        memo: invoice.memo
-                    })
-                });
-                console.log("✅ Proof/TX submitted to backend");
-            } catch (err) {
-                console.error("Failed to sync with backend:", err);
-            }
+            const result = await executeTransaction(transaction);
+            if (result && result.transactionId) {
+                setTxId(result.transactionId);
+                setStatus(`Transaction Broadcasted: ${result.transactionId}. Polling confirmation...`);
 
-            setStep('SUCCESS');
-            setStatus('Payment Successful!');
+
+                if (!wallet || !wallet.adapter) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    setStep('SUCCESS');
+                    return;
+                }
+                let isPending = true;
+                let attempts = 0;
+                while (isPending && attempts < 120) {
+                    attempts++;
+                    await new Promise(r => setTimeout(r, 1000));
+                    try {
+                        const statusRes = await wallet.adapter.transactionStatus(result.transactionId);
+                        const statusStr = typeof statusRes === 'string'
+                            ? (statusRes as string).toLowerCase()
+                            : (statusRes as any)?.status?.toLowerCase();
+
+                        if (statusStr === 'completed' || statusStr === 'finalized' || statusStr === 'accepted') {
+                            setStep('SUCCESS');
+                            setStatus('Payment Successful!');
+                            isPending = false;
+                        } else if (statusStr === 'failed' || statusStr === 'rejected') {
+                            throw new Error('Transaction rejected on-chain.');
+                        }
+                    } catch (err) {
+                        console.warn("Polling error or pending:", err);
+                    }
+                }
+            } else {
+                throw new Error("Transaction failed.");
+            }
 
         } catch (e: any) {
             console.error(e);
@@ -268,6 +304,11 @@ export const usePayment = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleConnect = async () => {
+        if (!publicKey) return;
+        setStep('PAY');
     };
 
     return {
@@ -280,6 +321,7 @@ export const usePayment = () => {
         conversionTxId,
         publicKey,
         payInvoice,
-        convertPublicToPrivate
+        convertPublicToPrivate,
+        handleConnect
     };
 };

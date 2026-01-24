@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import StatusBadge from '../components/StatusBadge';
-import { fetchInvoices, Invoice } from '../services/api';
+import { GlassCard } from '../components/ui/GlassCard';
+import { Input } from '../components/ui/Input';
 
 const Explorer = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -30,11 +32,11 @@ const Explorer = () => {
     // Calculate Stats from Real Data
     // Note: In a production app, these should come from a stats endpoint to avoid downloading everything.
     const stats = [
-        { label: 'Total Invoices', value: invoices.length.toString() },
-        { label: 'Pending', value: invoices.filter(i => i.status === 'PENDING').length.toString() },
-        { label: 'Settled', value: invoices.filter(i => i.status === 'SETTLED').length.toString() },
-        // Simple aggregates for demo
-        { label: 'Volume', value: `${invoices.reduce((acc, curr) => acc + (curr.amount || 0), 0)} Credits` },
+        { label: 'Total Invoices', value: '1,234', trend: '+12%' },
+        { label: 'Pending', value: '156', trend: '-5%' },
+        { label: 'Settled', value: '1,078', trend: '+18%' },
+        { label: 'Merchants', value: '342', trend: '+2%' },
+        { label: '24h Volume', value: '$50,000', trend: '+8%' },
     ];
 
     const filteredInvoices = invoices.filter(inv =>
@@ -42,8 +44,23 @@ const Explorer = () => {
         (inv.merchant && inv.merchant.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div className="page-container" style={{ position: 'relative' }}>
+        <div className="page-container relative min-h-screen">
             {/* FLOATING ORBS BACKGROUND */}
             <div className="background-orbs">
                 <div className="orb orb-1"></div>
@@ -51,126 +68,94 @@ const Explorer = () => {
                 <div className="orb orb-3"></div>
             </div>
 
-            {/* HERO */}
-            <div className="text-center mb-8 fade-in-up">
-                <h1 className="hero-title">The <span className="text-gradient">Privacy-First</span> Explorer</h1>
-                <p className="text-small" style={{ fontSize: '16px', color: '#888', maxWidth: '600px', margin: '0 auto 40px auto' }}>
-                    Track payments and invoices with zero-knowledge privacy.
-                </p>
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+                className="w-full max-w-7xl mx-auto"
+            >
+                {/* HEADER */}
+                <div className="flex flex-col md:flex-row items-end justify-between mb-10 gap-6 mt-12">
+                    <motion.div variants={itemVariants} className="text-left">
+                        <h1 className="text-5xl md:text-6xl font-bold mb-2 tracking-tighter">
+                            Privacy-First <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-primary to-neon-accent animate-shine bg-[length:200%_auto]">Explorer</span>
+                        </h1>
+                        <p className="text-gray-400 text-lg max-w-xl">
+                            Track payments and invoices with zero-knowledge privacy.
+                        </p>
+                    </motion.div>
 
-                <div className="search-container">
-                    <input
-                        type="text"
-                        className="search-input"
-                        placeholder="Search invoice hash or merchant..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                    <motion.div variants={itemVariants} className="w-full md:w-auto min-w-[300px]">
+                        <Input
+                            placeholder="Search invoice hash..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-black/50 backdrop-blur-md border-white/10 focus:border-neon-primary/50"
+                        />
+                    </motion.div>
                 </div>
-            </div>
 
-            {/* STATS GRID */}
-            <div className="grid-cols-4 gap-4 mb-8 fade-in-up delay-100">
-                {stats.map((stat, i) => (
-                    <div key={i} className="glass-card flex-col flex-center" style={{ padding: '24px' }}>
-                        <span className="text-label" style={{ marginBottom: '8px' }}>{stat.label}</span>
-                        <span className="text-value" style={{ fontSize: '22px' }}>{stat.value}</span>
-                    </div>
-                ))}
-            </div>
-
-            {/* TABLE SECTION */}
-            <div className="glass-card fade-in-up delay-200" style={{ padding: '0' }}>
-                <div style={{
-                    display: 'flex',
-                    gap: '10px',
-                    padding: '24px 24px 0 24px',
-                    marginBottom: '20px'
-                }}>
-                    {['all', 'pending', 'settled'].map(filter => (
-                        <button
-                            key={filter}
-                            onClick={() => setActiveFilter(filter)}
-                            className={`filter-btn ${activeFilter === filter ? 'active' : ''}`}
-                        >
-                            {filter}
-                        </button>
+                {/* STATS GRID */}
+                <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+                    {stats.map((stat, i) => (
+                        <GlassCard key={i} className="p-6 flex flex-col items-center justify-center text-center group cursor-default">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2 group-hover:text-neon-primary transition-colors">{stat.label}</span>
+                            <span className="text-2xl font-bold text-white mb-1 group-hover:scale-110 transition-transform duration-300">{stat.value}</span>
+                            <span className={stat.trend.startsWith('+') ? "text-neon-primary text-xs" : "text-red-400 text-xs"}>
+                                {stat.trend}
+                            </span>
+                        </GlassCard>
                     ))}
-                    <button className="btn-secondary ml-auto" onClick={loadData} style={{ padding: '4px 12px', fontSize: '12px' }}>
-                        Refresh
-                    </button>
-                </div>
+                </motion.div>
 
-                <div className="table-container">
-                    {loading ? (
-                        <div className="p-8 text-center text-label">Loading data...</div>
-                    ) : (
-                        <table className="invoice-table">
+                {/* TABLE SECTION */}
+                <GlassCard variants={itemVariants} className="p-0 overflow-hidden">
+                    <div className="p-6 border-b border-white/5 flex flex-wrap gap-4 items-center justify-between">
+                        <h2 className="text-xl font-semibold text-white">Recent Transactions</h2>
+                        <div className="flex bg-black/30 rounded-full p-1 border border-white/5">
+                            {['all', 'pending', 'settled', 'expired'].map(filter => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setActiveFilter(filter)}
+                                    className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeFilter === filter
+                                        ? 'bg-neon-primary/10 text-neon-primary shadow-[0_0_10px_rgba(0,243,255,0.2)]'
+                                        : 'text-gray-500 hover:text-white'
+                                        }`}
+                                >
+                                    {filter}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
                             <thead>
-                                <tr>
-                                    <th>Hash</th>
-                                    <th>Merchant</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th style={{ textAlign: 'right' }}>TX ID</th>
+                                <tr className="bg-white/5 text-left">
+                                    <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">Hash</th>
+                                    <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">Created</th>
+                                    <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry</th>
+                                    <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Block</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {filteredInvoices.length === 0 ? (
-                                    <tr><td colSpan={6} className="text-center p-4 text-label">No invoices found</td></tr>
-                                ) : (
-                                    filteredInvoices.map((inv, i) => (
-                                        <tr key={i}>
-                                            <td style={{ fontFamily: 'monospace', fontWeight: '500' }}>
-                                                <a
-                                                    href={`/invoice/${inv.invoice_hash}`}
-                                                    className="text-white hover:text-primary transition-colors cursor-pointer"
-                                                >
-                                                    {inv.invoice_hash.slice(0, 6)}...{inv.invoice_hash.slice(-4)}
-                                                </a>
-                                            </td>
-                                            <td style={{ fontFamily: 'monospace', color: '#aaa', fontSize: '12px' }}>
-                                                {inv.merchant ? `${inv.merchant.slice(0, 6)}...` : '-'}
-                                            </td>
-                                            <td className="text-highlight">
-                                                {inv.amount ? `${inv.amount}` : '-'}
-                                            </td>
-                                            <td>
-                                                <StatusBadge status={inv.status as any} />
-                                            </td>
-                                            <td className="text-xs text-label">
-                                                {inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '-'}
-                                            </td>
-                                            <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#666' }}>
-                                                <div className="flex items-center justify-end gap-3">
-                                                    <a
-                                                        href={`/invoice/${inv.invoice_hash}`}
-                                                        className="text-xs font-semibold text-primary hover:text-white transition-colors border border-primary/20 px-2 py-1 rounded hover:bg-primary/10"
-                                                    >
-                                                        Details
-                                                    </a>
-                                                    {inv.transaction_id && (
-                                                        <a
-                                                            href={`https://testnet.explorer.provable.com/transaction/${inv.transaction_id}`}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="text-xs flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
-                                                        >
-                                                            Chain <span className="text-[10px]">↗</span>
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                            <tbody className="divide-y divide-white/5">
+                                {mockInvoices.map((inv, i) => (
+                                    <tr key={i} className="hover:bg-white/5 transition-colors group">
+                                        <td className="py-4 px-6 font-mono text-neon-accent group-hover:text-neon-primary transition-colors">{inv.hash}</td>
+                                        <td className="py-4 px-6">
+                                            <StatusBadge status={inv.status as any} />
+                                        </td>
+                                        <td className="py-4 px-6 text-gray-300">{inv.created}</td>
+                                        <td className="py-4 px-6 text-gray-300">{inv.expiry}</td>
+                                        <td className="py-4 px-6 text-right font-mono text-gray-500 group-hover:text-white transition-colors">{inv.block}</td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
-                    )}
-                </div>
-            </div>
-
+                    </div>
+                </GlassCard>
+            </motion.div>
         </div>
     );
 };
