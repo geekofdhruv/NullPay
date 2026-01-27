@@ -10,8 +10,6 @@ import {
     DecryptPermission,
 } from "@provablehq/aleo-wallet-adaptor-core";
 import { Network } from "@provablehq/aleo-types";
-
-// Default styles
 import "@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css";
 
 interface AleoWalletProviderProps {
@@ -46,7 +44,7 @@ export const AleoWalletProvider = ({ children }: AleoWalletProviderProps) => {
             decryptPermission={DecryptPermission.AutoDecrypt}
             network={Network.TESTNET}
             autoConnect
-            programs={['zk_pay_proofs_privacy_v6.aleo']}
+            programs={['zk_pay_proofs_privacy_v6.aleo', 'credits.aleo']}
         >
             <WalletModalProvider>
                 {children}

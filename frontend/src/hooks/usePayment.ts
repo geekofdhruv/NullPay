@@ -8,7 +8,7 @@ export type PaymentStep = 'CONNECT' | 'VERIFY' | 'CONVERT' | 'PAY' | 'SUCCESS' |
 
 export const usePayment = () => {
     const [searchParams] = useSearchParams();
-    const { address, wallet, executeTransaction, requestRecords } = useWallet();
+    const { address, wallet, executeTransaction, requestRecords, decrypt } = useWallet();
     const publicKey = address;
     const [invoice, setInvoice] = useState<{
         merchant: string;
@@ -73,6 +73,7 @@ export const usePayment = () => {
                     memo
                 });
 
+                setStatus(''); // Clear status after verification
                 if (publicKey) {
                     setStep('PAY');
                 } else {
@@ -94,10 +95,16 @@ export const usePayment = () => {
 
 
 
-    const getMicrocredits = (recordData: any): number => {
+    const getMicrocredits = (record: any): number => {
         try {
-            if (recordData && recordData.microcredits) {
-                return parseInt(recordData.microcredits.replace('u64', ''));
+            if (record.data && record.data.microcredits) {
+                return parseInt(record.data.microcredits.replace('u64', ''));
+            }
+            if (record.plaintext) {
+                const match = record.plaintext.match(/microcredits:\s*([\d_]+)u64/);
+                if (match && match[1]) {
+                    return parseInt(match[1].replace(/_/g, ''));
+                }
             }
             return 0;
         } catch {
@@ -144,6 +151,13 @@ export const usePayment = () => {
                             ? (statusRes as string).toLowerCase()
                             : (statusRes as any)?.status?.toLowerCase();
 
+                        // Check for final on-chain ID
+                        if ((statusRes as any)?.transactionId) {
+                            const finalId = (statusRes as any).transactionId;
+                            console.log("Conversion On-Chain ID found:", finalId);
+                            setConversionTxId(finalId);
+                        }
+
                         if (statusStr === 'completed' || statusStr === 'finalized' || statusStr === 'accepted') {
                             setStatus('Conversion Successful! Switching to Payment...');
                             await new Promise(r => setTimeout(r, 1500));
@@ -173,45 +187,75 @@ export const usePayment = () => {
         try {
             setLoading(true);
             setStatus('Searching for suitable private record...');
-            const records = await requestRecords('credits.aleo');
+            const records = await requestRecords('credits.aleo', false);
+            console.log("Wallet Records (Initial):", records);
             const amountMicro = Math.round(invoice.amount * 1_000_000);
 
             const recordsAny = records as any[];
+            let payRecord = null;
 
-            const payRecord = recordsAny.find(r => {
-                const val = getMicrocredits(r.data);
-                // Check if spendable (needs plaintext or nonce)
+            // Helper to get value, decrypting if needed
+            const processRecord = async (r: any) => {
+                let val = getMicrocredits(r);
+                if (val === 0 && r.recordCiphertext && !r.plaintext && decrypt) {
+                    try {
+                        const decrypted = await decrypt(r.recordCiphertext);
+                        if (decrypted) {
+                            r.plaintext = decrypted;
+                            val = getMicrocredits(r);
+                        }
+                    } catch (e) { console.warn("Decrypt failed:", e); }
+                }
+                return val;
+            };
+
+            for (const r of recordsAny) {
+                if (r.spent) continue;
+                const val = await processRecord(r);
+
+                // Check spendability again after potential decryption
                 const isSpendable = !!(r.plaintext || r.nonce || r._nonce || r.data?._nonce || r.ciphertext);
-                // Strict greater than logic
-                return !r.spent && isSpendable && val > amountMicro;
-            });
+
+                if (isSpendable && val > amountMicro) {
+                    payRecord = r;
+                    break;
+                }
+            }
 
             let finalRecord = payRecord;
 
             if (!finalRecord) {
-                // Retry Logic (Sync Latency)
                 setStatus('Syncing latest records...');
                 await new Promise(r => setTimeout(r, 2000));
-                const latestRecords = await requestRecords('credits.aleo');
+                const latestRecords = await requestRecords('credits.aleo', false);
+                console.log("Wallet Records (Retry):", latestRecords);
                 const latestRecordsAny = latestRecords as any[];
 
-                finalRecord = latestRecordsAny.find(r => {
-                    const val = getMicrocredits(r.data);
-                    // Relaxed check: trust wallet for spending if unspent
-                    return !r.spent && val >= amountMicro;
-                });
+                for (const r of latestRecordsAny) {
+                    if (r.spent) continue;
+                    const val = await processRecord(r);
+                    if (val >= amountMicro) {
+                        finalRecord = r;
+                        break;
+                    }
+                }
 
                 if (finalRecord) {
                     setStatus('Records synced! Proceeding with payment...');
                 } else {
                     setStep('CONVERT');
 
-                    const totalBalance = latestRecordsAny.reduce((sum, r) => {
-                        const val = getMicrocredits(r.data);
-                        return !r.spent ? sum + val : sum;
-                    }, 0);
+                    // Calculate total balance - need to decrypt all unspent
+                    let totalBalance = 0;
+                    let maxRecord = 0;
 
-                    const maxRecord = Math.max(...latestRecordsAny.filter(r => !r.spent).map(r => getMicrocredits(r.data)));
+                    for (const r of latestRecordsAny) {
+                        if (!r.spent) {
+                            const val = await processRecord(r);
+                            totalBalance += val;
+                            if (val > maxRecord) maxRecord = val;
+                        }
+                    }
 
                     if (totalBalance >= amountMicro) {
                         setStatus(`Privacy Protocol requires a single record > ${invoice.amount}. Your largest is ${maxRecord / 1000000}. Converting ${invoice.amount} more will create a unified record.`);
@@ -282,6 +326,13 @@ export const usePayment = () => {
                         const statusStr = typeof statusRes === 'string'
                             ? (statusRes as string).toLowerCase()
                             : (statusRes as any)?.status?.toLowerCase();
+
+                        // Check for final on-chain ID
+                        if ((statusRes as any)?.transactionId) {
+                            const finalId = (statusRes as any).transactionId;
+                            console.log("Payment On-Chain ID found:", finalId);
+                            setTxId(finalId);
+                        }
 
                         if (statusStr === 'completed' || statusStr === 'finalized' || statusStr === 'accepted') {
                             setStep('SUCCESS');

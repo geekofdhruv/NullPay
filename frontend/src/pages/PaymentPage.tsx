@@ -151,7 +151,7 @@ const PaymentPage = () => {
                                 {txId && (
                                     <Button
                                         variant="primary"
-                                        onClick={() => window.open(`https://explorer.aleo.org/testnet/transaction/${txId}`, '_blank')}
+                                        onClick={() => window.open(`https://testnet.explorer.provable.com/transaction/${txId}`, '_blank')}
                                     >
                                         View Transaction
                                     </Button>
