@@ -37,6 +37,18 @@ const PaymentPage = () => {
 
     return (
         <div className="page-container flex flex-col items-center justify-center min-h-[85vh]">
+            {/* ALEO GLOBE BACKGROUND */}
+            <div className="absolute top-[-150px] left-1/2 -translate-x-1/2 w-screen h-[800px] z-0 pointer-events-none flex justify-center overflow-hidden">
+                <img
+                    src="/assets/aleo_globe.png"
+                    alt="Aleo Globe"
+                    className="w-full h-full object-cover opacity-50 mix-blend-screen mask-image-gradient-b"
+                    style={{
+                        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)'
+                    }}
+                />
+            </div>
             <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -45,8 +57,8 @@ const PaymentPage = () => {
             >
                 {/* STATUS HEADER */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-neon-primary to-neon-accent">
-                        {step === 'SUCCESS' ? 'Payment Successful' : step === 'ALREADY_PAID' ? 'Invoice Paid' : 'Pay Invoice'}
+                    <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter text-white">
+                        {step === 'SUCCESS' ? 'Payment' : step === 'ALREADY_PAID' ? 'Invoice' : 'Pay'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">{step === 'SUCCESS' ? 'Successful' : step === 'ALREADY_PAID' ? 'Paid' : 'Invoice'}</span>
                     </h1>
 
                     {invoice && !error && (
@@ -105,7 +117,7 @@ const PaymentPage = () => {
                         </div>
                         <div className="flex justify-between items-center pt-4 border-t border-white/5">
                             <span className="text-sm font-medium text-gray-400 uppercase tracking-widest">Amount</span>
-                            <span className="text-2xl font-bold text-white tracking-tight">{invoice?.amount || '0'} <span className="text-sm text-gray-500 font-normal">USDC</span></span>
+                            <span className="text-2xl font-bold text-white tracking-tight">{invoice?.amount || '0'} <span className="text-sm text-gray-500 font-normal">Credits</span></span>
                         </div>
                         {invoice?.memo && (
                             <div className="flex justify-between items-center pt-4 border-t border-white/5">
@@ -118,8 +130,8 @@ const PaymentPage = () => {
                     {/* ACTION AREA */}
                     <div className="space-y-4">
                         {error && (
-                            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
-                                <p className="text-red-400 text-sm font-medium">{error}</p>
+                            <div className="p-4 bg-white/5 border border-white/10 rounded-xl text-center">
+                                <p className="text-white text-sm font-medium">{error}</p>
                             </div>
                         )}
 
@@ -139,7 +151,7 @@ const PaymentPage = () => {
                                 {txId && (
                                     <Button
                                         variant="primary"
-                                        onClick={() => window.open(`https://explorer.aleo.org/testnet/transaction/${txId}`, '_blank')}
+                                        onClick={() => window.open(`https://testnet.explorer.provable.com/transaction/${txId}`, '_blank')}
                                     >
                                         View Transaction
                                     </Button>
@@ -176,7 +188,7 @@ const PaymentPage = () => {
                                 ) : step === 'CONVERT' ? (
                                     'Convert Public to Private'
                                 ) : (
-                                    `Pay ${invoice?.amount} USDC`
+                                    `Pay ${invoice?.amount} Credits`
                                 )}
                             </Button>
                         )}

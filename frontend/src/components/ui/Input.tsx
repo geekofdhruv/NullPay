@@ -11,7 +11,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         return (
             <div className="w-full space-y-2">
                 {label && (
-                    <label className="text-sm font-medium text-gray-400 uppercase tracking-wider ml-1">
+                    <label className="text-sm font-medium text-gray-300 uppercase tracking-wider ml-1">
                         {label}
                     </label>
                 )}
@@ -19,8 +19,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     <input
                         type={type}
                         className={cn(
-                            "flex h-14 w-full rounded-2xl border border-white/5 bg-black/20 px-4 py-3 text-lg ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-primary/50 focus-visible:border-neon-primary/50 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300",
-                            "hover:border-white/10 hover:bg-black/30",
+                            "flex h-14 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-lg ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 text-gray-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 focus-visible:border-white/20 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300",
+                            "hover:border-white/20 hover:bg-black/30",
                             error && "border-red-500 focus-visible:ring-red-500",
                             className
                         )}

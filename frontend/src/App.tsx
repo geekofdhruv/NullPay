@@ -29,9 +29,9 @@ function App() {
         <Router>
             <div className="min-h-screen bg-background relative overflow-hidden">
                 <div className="fixed inset-0 pointer-events-none z-0">
-                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px] animate-float" />
-                    <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-[100px] animate-float-delayed" />
-                    <div className="absolute bottom-[-10%] left-[20%] w-[35%] h-[35%] bg-neon-primary/5 rounded-full blur-[120px] animate-pulse-slow" />
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white/5 rounded-full blur-[120px] animate-float" />
+                    <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] bg-zinc-800/20 rounded-full blur-[100px] animate-float-delayed" />
+                    <div className="absolute bottom-[-10%] left-[20%] w-[35%] h-[35%] bg-white/5 rounded-full blur-[120px] animate-pulse-slow" />
                 </div>
 
                 <Navbar />

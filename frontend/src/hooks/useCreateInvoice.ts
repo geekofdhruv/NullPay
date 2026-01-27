@@ -46,7 +46,8 @@ export const useCreateInvoice = () => {
                 program: 'zk_pay_proofs_privacy_v6.aleo',
                 function: 'create_invoice',
                 inputs: inputs,
-                fee: 100_000
+                fee: 100_000,
+                privateFee: false
             };
 
             let txId = '';

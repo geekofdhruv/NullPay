@@ -11,7 +11,7 @@ interface ButtonProps extends HTMLMotionProps<"button"> {
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = "primary", size = "md", glow = true, children, ...props }, ref) => {
         const variants = {
-            primary: "bg-gradient-to-r from-neon-primary to-neon-accent text-white font-bold border-none hover:shadow-[0_0_20px_rgba(0,243,255,0.4)]",
+            primary: "bg-gradient-to-r from-neon-primary to-neon-accent text-black font-bold border-none hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]",
             secondary: "bg-white/10 text-white border border-white/10 hover:bg-white/20 hover:border-white/20",
             outline: "bg-transparent border border-neon-primary/50 text-neon-primary hover:bg-neon-primary/10",
             ghost: "bg-transparent text-gray-400 hover:text-white hover:bg-white/5",

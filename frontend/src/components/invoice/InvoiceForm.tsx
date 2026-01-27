@@ -34,7 +34,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
             <div className="space-y-6">
                 <Input
-                    label="Amount (USDC)"
+                    label="Amount (Credits)"
                     type="number"
                     placeholder="0.00"
                     value={amount}
@@ -42,19 +42,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 />
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-400 uppercase tracking-wider ml-1">Expiry</label>
+                    <label className="text-sm font-medium text-gray-300 uppercase tracking-wider ml-1">Expiry</label>
                     <div className="relative">
                         <select
-                            className="w-full bg-black/20 border border-white/5 text-white rounded-2xl px-4 py-3 appearance-none focus:outline-none focus:border-neon-primary/50 hover:bg-black/30 transition-colors"
+                            className="w-full bg-black/20 border border-white/10 text-gray-200 rounded-2xl px-4 py-3 appearance-none focus:outline-none focus:border-white/20 hover:bg-black/30 transition-colors"
                             value={expiry}
                             onChange={(e) => setExpiry(e.target.value)}
                         >
-                            <option value="0" className="bg-void-main">No Expiry (Permanent)</option>
-                            <option value="1" className="bg-void-main">1 Hour</option>
-                            <option value="24" className="bg-void-main">24 Hours</option>
-                            <option value="168" className="bg-void-main">7 Days</option>
+                            <option value="0" className="bg-void-main text-white">No Expiry (Permanent)</option>
+                            <option value="1" className="bg-void-main text-white">1 Hour</option>
+                            <option value="24" className="bg-void-main text-white">24 Hours</option>
+                            <option value="168" className="bg-void-main text-white">7 Days</option>
                         </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300">
                             ▼
                         </div>
                     </div>

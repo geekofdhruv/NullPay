@@ -12,24 +12,24 @@ export default {
                 foreground: '#ffffff',
 
                 // The "Void" - Deep darks
-                'void-main': '#02040a', // Slightly blueish black
-                'void-lighter': '#0a0c14',
+                'void-main': '#000000', // Pure black
+                'void-lighter': '#0a0a0a', // Almost black
 
-                // Neon Accents
-                'neon-primary': '#00f3ff', // Electric Cyan
-                'neon-secondary': '#7000ff',  // Electric Purple
-                'neon-accent': '#0066ff', // Deep Blue
+                // Monochrome Accents (formerly Neon)
+                'neon-primary': '#ffffff', // White (Primary Action/Highlight)
+                'neon-secondary': '#a3a3a3', // Neutral 400 (Secondary)
+                'neon-accent': '#525252', // Neutral 600 (Tertiary/Depth)
 
                 // Glass States
-                'glass-border': 'rgba(0, 243, 255, 0.15)', // Cyan border
-                'glass-border-hover': 'rgba(0, 243, 255, 0.3)',
-                'glass-surface': 'rgba(2, 8, 20, 0.5)', // Dark Blue/Black Glass (Not White)
-                'glass-highlight': 'rgba(0, 243, 255, 0.05)',
+                'glass-border': 'rgba(255, 255, 255, 0.15)',
+                'glass-border-hover': 'rgba(255, 255, 255, 0.3)',
+                'glass-surface': 'rgba(10, 10, 10, 0.6)',
+                'glass-highlight': 'rgba(255, 255, 255, 0.1)',
 
-                // Status
-                success: '#00ffa3', // Keep Green for success
-                error: '#ff3366',
-                warning: '#ffaa00',
+                // Status - Minimalist/Monochrome
+                success: '#ffffff', // Use white + icons for success
+                error: '#ffffff',   // Use white + icons for error (or very subtle red if needed, but sticking to mono)
+                warning: '#ffffff',
             },
             fontFamily: {
                 sans: ['Space Grotesk', 'sans-serif'],
@@ -55,14 +55,14 @@ export default {
                     '100%': { transform: 'translateX(100%)' },
                 },
                 glow: {
-                    '0%': { boxShadow: '0 0 5px rgba(0, 243, 255, 0.2), 0 0 10px rgba(0, 243, 255, 0.1)' },
-                    '100%': { boxShadow: '0 0 20px rgba(0, 243, 255, 0.6), 0 0 40px rgba(0, 243, 255, 0.3)' },
+                    '0%': { boxShadow: '0 0 5px rgba(255, 255, 255, 0.1), 0 0 10px rgba(255, 255, 255, 0.05)' },
+                    '100%': { boxShadow: '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)' },
                 }
             },
             boxShadow: {
-                'neon': '0 0 5px theme("colors.neon-primary"), 0 0 20px theme("colors.neon-primary")',
-                'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-                'glass-hover': '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+                'neon': '0 0 5px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3)', // White glow
+                'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+                'glass-hover': '0 8px 32px 0 rgba(0, 0, 0, 0.7)',
             }
         },
     },

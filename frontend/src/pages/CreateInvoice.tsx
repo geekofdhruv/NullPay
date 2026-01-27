@@ -17,45 +17,44 @@ export const CreateInvoice: React.FC = () => {
     } = useCreateInvoice();
 
     return (
-        <div className="page-container min-h-screen">
-            <div className="w-full max-w-6xl mx-auto pt-20 px-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <div className="page-container relative min-h-screen">
+            <div className="fixed inset-0 pointer-events-none z-0 opacity-30">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white/5 rounded-full blur-[120px] animate-float" />
+                <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] bg-zinc-800/20 rounded-full blur-[100px] animate-float-delayed" />
+                <div className="absolute bottom-[-10%] left-[20%] w-[35%] h-[35%] bg-white/5 rounded-full blur-[120px] animate-pulse-slow" />
+            </div>
 
-                    {/* LEFT SIDE - HEADING & INFO */}
+            {/* ALEO GLOBE BACKGROUND */}
+            <div className="absolute top-[-150px] left-1/2 -translate-x-1/2 w-screen h-[800px] z-0 pointer-events-none flex justify-center overflow-hidden">
+                <img
+                    src="/assets/aleo_globe.png"
+                    alt="Aleo Globe"
+                    className="w-full h-full object-cover opacity-50 mix-blend-screen mask-image-gradient-b"
+                    style={{
+                        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)'
+                    }}
+                />
+            </div>
+            <div className="w-full max-w-7xl mx-auto pt-12 px-6 relative z-10">
+                {/* CENTERED HEADER */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col items-center justify-center text-center mb-16"
+                >
+                    <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter leading-none text-white">
+                        Create <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Invoice</span>
+                    </h1>
+                    <p className="text-gray-300 text-xl leading-relaxed max-w-2xl mb-8">
+                        Generate a privacy-preserving invoice link to receive payments securely on the Aleo network.
+                    </p>
+                </motion.div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-12 items-start max-w-2xl mx-auto">
                     <motion.div
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="text-left sticky top-24"
-                    >
-                        <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter loading-none">
-                            Create <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-primary to-neon-accent">Invoice</span>
-                        </h1>
-                        <p className="text-gray-400 text-xl leading-relaxed max-w-md mb-8">
-                            Generate a privacy-preserving invoice link to receive payments securely on the Aleo network.
-                        </p>
-
-                        {!invoiceData && (
-                            <div className="hidden lg:block p-6 rounded-2xl border border-white/5 bg-white/5 backdrop-blur-md">
-                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-neon-primary animate-pulse" />
-                                    How it works
-                                </h3>
-                                <ul className="text-sm text-gray-400 space-y-3 pl-4 list-disc marker:text-neon-primary">
-                                    <li>Enter the amount you wish to receive.</li>
-                                    <li>Set an expiry time for the invoice.</li>
-                                    <li>Share the generated link with the payer.</li>
-                                    <li>Receive funds privately via ZK proofs.</li>
-                                </ul>
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* RIGHT SIDE - FORM OR RESULT */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="w-full"
                     >
