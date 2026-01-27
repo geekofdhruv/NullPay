@@ -34,7 +34,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
             <div className="space-y-6">
                 <Input
-                    label="Amount (USDC)"
+                    label="Amount (Credits)"
                     type="number"
                     placeholder="0.00"
                     value={amount}
