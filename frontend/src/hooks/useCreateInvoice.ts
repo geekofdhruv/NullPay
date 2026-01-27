@@ -85,6 +85,8 @@ export const useCreateInvoice = () => {
                         // Capture the final on-chain ID if provided in object response
                         if (typeof statusResponse === 'object' && (statusResponse as any).transactionId) {
                             finalTransactionId = (statusResponse as any).transactionId;
+                            console.log("Final Transaction ID:", finalTransactionId);
+
                         }
 
                         // Try to extract hash from execution outputs if available (Optimization)
@@ -144,7 +146,24 @@ export const useCreateInvoice = () => {
 
                                 if (!hash) throw new Error("Could not retrieve Invoice Hash from wallet execution.");
 
-                                setStatus('Hash retrieved successfully!');
+                                setStatus('Hash retrieved successfully! Saving to database...');
+
+                                // Save to Database
+                                try {
+                                    const { createInvoice } = await import('../services/api');
+                                    await createInvoice({
+                                        invoice_hash: hash,
+                                        merchant_address: merchant,
+                                        amount: Number(amount),
+                                        memo: memo || '',
+                                        status: 'PENDING',
+                                        invoice_transaction_id: finalTransactionId
+                                    });
+                                    console.log("Invoice saved to DB");
+                                } catch (dbErr) {
+                                    console.error("Failed to save invoice to DB:", dbErr);
+                                    // Don't block UI flow if DB save fails, but log it
+                                }
 
                                 // Success Flow
                                 const params = new URLSearchParams({

@@ -3,6 +3,7 @@ const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { encrypt, decrypt } = require('./encryption');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -30,10 +31,10 @@ app.get('/', (req, res) => {
 });
 
 // GET /api/invoices
-// Fetch all invoices (optionally filter by status)
+// Fetch all invoices (optionally filter by status, merchant)
 app.get('/api/invoices', async (req, res) => {
-    const { status } = req.query;
-    let query = supabase.from('invoices').select('*').order('created_at', { ascending: false });
+    const { status, limit = 50, merchant } = req.query;
+    let query = supabase.from('invoices').select('*').order('created_at', { ascending: false }).limit(limit);
 
     if (status) {
         query = query.eq('status', status);
@@ -46,8 +47,75 @@ app.get('/api/invoices', async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 
-    res.json(data);
+    // Decrypt addresses before returning
+    const decryptedData = data.map(inv => ({
+        ...inv,
+        merchant_address: decrypt(inv.merchant_address),
+        payer_address: decrypt(inv.payer_address)
+    }));
+
+    // Apply merchant filter in memory if requested (since encryption is randomized)
+    let finalData = decryptedData;
+    if (merchant) {
+        finalData = finalData.filter(inv => inv.merchant_address === merchant);
+    }
+
+    res.json(finalData);
 });
+
+// GET /api/invoices/merchant/:address
+// Specific endpoint for merchant profile
+app.get('/api/invoices/merchant/:address', async (req, res) => {
+    const { address } = req.params;
+
+    // Fetch recent invoices (limit 100 for now to prevent overload)
+    const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+    if (error) {
+        console.error('Error fetching invoices:', error);
+        return res.status(500).json({ error: error.message });
+    }
+
+    // Decrypt and Filter
+    const merchantInvoices = data
+        .map(inv => ({
+            ...inv,
+            merchant_address: decrypt(inv.merchant_address),
+            payer_address: decrypt(inv.payer_address)
+        }))
+        .filter(inv => inv.merchant_address === address);
+
+    res.json(merchantInvoices);
+});
+
+// GET /api/invoices/recent
+// Public explorer data
+app.get('/api/invoices/recent', async (req, res) => {
+    const { limit = 10 } = req.query;
+
+    const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(Number(limit));
+
+    if (error) {
+        return res.status(500).json({ error: error.message });
+    }
+
+    const decryptedData = data.map(inv => ({
+        ...inv,
+        merchant_address: decrypt(inv.merchant_address),
+        payer_address: decrypt(inv.payer_address)
+    }));
+
+    res.json(decryptedData);
+});
+
 
 // GET /api/invoice/:hash
 // Fetch a single invoice by hash
@@ -61,45 +129,97 @@ app.get('/api/invoice/:hash', async (req, res) => {
         .single();
 
     if (error) {
-        console.error('Error fetching invoice:', error);
+        // console.error('Error fetching invoice:', error);
         return res.status(404).json({ error: 'Invoice not found' });
     }
+
+    // Decrypt
+    data.merchant_address = decrypt(data.merchant_address);
+    data.payer_address = decrypt(data.payer_address);
 
     res.json(data);
 });
 
-// POST /api/sync-event (Mock for Chain Listener)
-// This endpoint would be called by a local node listener or cron job
-app.post('/api/sync-event', async (req, res) => {
-    const { invoice_hash, status, block_height, transaction_id } = req.body;
+// POST /api/invoices
+// Create new invoice
+app.post('/api/invoices', async (req, res) => {
+    const { invoice_hash, merchant_address, amount, memo, status, invoice_transaction_id } = req.body;
 
-    if (!invoice_hash || !status || !block_height) {
+    if (!invoice_hash || !merchant_address || !amount) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Upsert invoice data
-    const { data, error } = await supabase
-        .from('invoices')
-        .upsert({
-            invoice_hash,
-            status,
-            block_height,
-            transaction_id,
-            updated_at: new Date().toISOString()
-        })
-        .select();
+    try {
+        const encryptedMerchant = encrypt(merchant_address);
 
-    if (error) {
-        console.error('Error syncing event:', error);
-        return res.status(500).json({ error: error.message });
+        const { data, error } = await supabase
+            .from('invoices')
+            .upsert({
+                invoice_hash,
+                merchant_address: encryptedMerchant,
+                amount,
+                memo,
+                status: status || 'PENDING',
+                invoice_transaction_id,  // Invoice creation TX
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Return decrypted
+        data.merchant_address = merchant_address;
+        res.json(data);
+
+    } catch (err) {
+        console.error("Error creating invoice:", err);
+        res.status(500).json({ error: err.message });
     }
-
-    res.json({ success: true, data });
 });
 
-// --- Start Server ---
+// PATCH /api/invoices/:hash
+// Update invoice status (e.g. after payment)
+app.patch('/api/invoices/:hash', async (req, res) => {
+    const { hash } = req.params;
+    const { status, payment_tx_id, payer_address, block_settled } = req.body;
+
+    try {
+        const updates = {
+            status,
+            updated_at: new Date().toISOString()
+        };
+
+        if (payment_tx_id) updates.payment_tx_id = payment_tx_id;
+        if (block_settled) updates.block_settled = block_settled;
+        if (payer_address) {
+            updates.payer_address = encrypt(payer_address);
+        }
+
+        const { data, error } = await supabase
+            .from('invoices')
+            .update(updates)
+            .eq('invoice_hash', hash)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Decrypt for response
+        if (data) {
+            data.merchant_address = decrypt(data.merchant_address);
+            data.payer_address = decrypt(data.payer_address);
+        }
+
+        res.json(data);
+
+    } catch (err) {
+        console.error("Error updating invoice:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
-    console.log(`Supabase URL: ${supabaseUrl}`);
 });

@@ -53,6 +53,17 @@ export const usePayment = () => {
                 // Check Status
                 const invoiceStatus = await getInvoiceStatus(fetchedHash);
                 if (invoiceStatus === 1) {
+                    // Fetch full details from DB (payment_tx_id etc)
+                    let dbInvoice = null;
+                    try {
+                        const { fetchInvoiceByHash } = await import('../services/api');
+                        dbInvoice = await fetchInvoiceByHash(fetchedHash);
+                        // If we have a payment_tx_id, set it so "View Transaction" works
+                        if (dbInvoice && dbInvoice.payment_tx_id) {
+                            setTxId(dbInvoice.payment_tx_id);
+                        }
+                    } catch (e) { console.warn("Could not fetch DB details", e); }
+
                     setInvoice({
                         merchant,
                         amount: Number(amount),
@@ -319,6 +330,8 @@ export const usePayment = () => {
                 }
                 let isPending = true;
                 let attempts = 0;
+                let onChainId = result.transactionId; // Start with broadcast ID
+
                 while (isPending && attempts < 120) {
                     attempts++;
                     await new Promise(r => setTimeout(r, 1000));
@@ -330,14 +343,29 @@ export const usePayment = () => {
 
                         // Check for final on-chain ID
                         if ((statusRes as any)?.transactionId) {
-                            const finalId = (statusRes as any).transactionId;
-                            console.log("Payment On-Chain ID found:", finalId);
-                            setTxId(finalId);
+                            onChainId = (statusRes as any).transactionId;
+                            console.log("Payment On-Chain ID found:", onChainId);
+                            setTxId(onChainId);
                         }
 
                         if (statusStr === 'completed' || statusStr === 'finalized' || statusStr === 'accepted') {
                             setStep('SUCCESS');
                             setStatus('Payment Successful!');
+
+                            // Update Database
+                            try {
+                                const { updateInvoiceStatus } = await import('../services/api');
+                                console.log('Final Payment TX ID for DB:', onChainId);
+                                await updateInvoiceStatus(invoice.hash, {
+                                    status: 'SETTLED',
+                                    payment_tx_id: onChainId,
+                                    payer_address: publicKey || undefined
+                                });
+                                console.log("Invoice updated in DB");
+                            } catch (dbErr) {
+                                console.error("Failed to update invoice in DB:", dbErr);
+                            }
+
                             isPending = false;
                         } else if (statusStr === 'failed' || statusStr === 'rejected') {
                             throw new Error('Transaction rejected on-chain.');
