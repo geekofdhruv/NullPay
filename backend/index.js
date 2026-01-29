@@ -8,11 +8,9 @@ const { encrypt, decrypt } = require('./encryption');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
+
 app.use(cors());
 app.use(express.json());
-
-// Supabase Client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
@@ -23,15 +21,11 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// --- Routes ---
 
-// Health Check
 app.get('/', (req, res) => {
     res.send('AleoZKPay Backend is running');
 });
 
-// GET /api/invoices
-// Fetch all invoices (optionally filter by status, merchant)
 app.get('/api/invoices', async (req, res) => {
     const { status, limit = 50, merchant } = req.query;
     let query = supabase.from('invoices').select('*').order('created_at', { ascending: false }).limit(limit);
@@ -47,7 +41,6 @@ app.get('/api/invoices', async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 
-    // Decrypt addresses before returning
     const decryptedData = data.map(inv => ({
         ...inv,
         merchant_address: decrypt(inv.merchant_address),
@@ -63,8 +56,6 @@ app.get('/api/invoices', async (req, res) => {
     res.json(finalData);
 });
 
-// GET /api/invoices/merchant/:address
-// Specific endpoint for merchant profile
 app.get('/api/invoices/merchant/:address', async (req, res) => {
     const { address } = req.params;
 

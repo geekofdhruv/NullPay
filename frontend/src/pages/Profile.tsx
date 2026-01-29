@@ -140,7 +140,7 @@ const Profile = () => {
 
             <motion.div
                 initial="hidden"
-                animate="show"
+                animate="visible"
                 variants={containerVariants}
                 className="w-full max-w-7xl mx-auto pt-12 relative z-10 pb-20"
             >
@@ -277,7 +277,7 @@ const Profile = () => {
                     </div>
                 </GlassCard>
             </motion.div>
-        </motion.div>
+        </div>
     );
 };
 
