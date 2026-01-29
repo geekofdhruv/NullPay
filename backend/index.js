@@ -134,7 +134,7 @@ app.get('/api/invoice/:hash', async (req, res) => {
 // POST /api/invoices
 // Create new invoice
 app.post('/api/invoices', async (req, res) => {
-    const { invoice_hash, merchant_address, amount, memo, status, invoice_transaction_id } = req.body;
+    const { invoice_hash, merchant_address, amount, memo, status, invoice_transaction_id, salt, invoice_type } = req.body;
 
     if (!invoice_hash || !merchant_address || !amount) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -152,6 +152,8 @@ app.post('/api/invoices', async (req, res) => {
                 memo,
                 status: status || 'PENDING',
                 invoice_transaction_id,  // Invoice creation TX
+                salt: salt || null,  // Store salt for payment link generation
+                invoice_type: invoice_type !== undefined ? invoice_type : 0,  // 0 = Standard, 1 = Fundraising
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
@@ -174,7 +176,7 @@ app.post('/api/invoices', async (req, res) => {
 // Update invoice status (e.g. after payment)
 app.patch('/api/invoices/:hash', async (req, res) => {
     const { hash } = req.params;
-    const { status, payment_tx_id, payer_address, block_settled } = req.body;
+    const { status, payment_tx_ids, payer_address, block_settled } = req.body;
 
     try {
         const updates = {
@@ -182,7 +184,7 @@ app.patch('/api/invoices/:hash', async (req, res) => {
             updated_at: new Date().toISOString()
         };
 
-        if (payment_tx_id) updates.payment_tx_id = payment_tx_id;
+        if (payment_tx_ids) updates.payment_tx_ids = payment_tx_ids;
         if (block_settled) updates.block_settled = block_settled;
         if (payer_address) {
             updates.payer_address = encrypt(payer_address);

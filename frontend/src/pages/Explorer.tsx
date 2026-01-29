@@ -5,7 +5,7 @@ import { GlassCard } from '../components/ui/GlassCard';
 import { Input } from '../components/ui/Input';
 import { useTransactions } from '../hooks/useTransactions';
 import { pageVariants, staggerContainer, fadeInUp, scaleIn } from '../utils/animations';
-import { getInvoiceHashFromMapping } from '../utils/aleo-utils';
+import { getInvoiceHashFromMapping, getInvoiceStatus } from '../utils/aleo-utils';
 import { fetchInvoiceByHash, Invoice } from '../services/api';
 
 const Explorer = () => {
@@ -20,6 +20,32 @@ const Explorer = () => {
     const [searchResult, setSearchResult] = useState<Invoice | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
+
+    // On-chain verification state
+    const [verificationStatus, setVerificationStatus] = useState<Record<string, 'idle' | 'verifying' | 'verified' | 'not-verified'>>({});
+
+    const handleVerifyOnChain = async (invoiceHash: string) => {
+        setVerificationStatus(prev => ({ ...prev, [invoiceHash]: 'verifying' }));
+
+        try {
+            const status = await getInvoiceStatus(invoiceHash);
+            console.log(`Verification result for ${invoiceHash}:`, status, 'Type:', typeof status);
+
+            // status: 0 = not verified/pending, 1 = verified/settled, null = error/not found
+            if (status === 1) {
+                setVerificationStatus(prev => ({ ...prev, [invoiceHash]: 'verified' }));
+            } else if (status === 0) {
+                setVerificationStatus(prev => ({ ...prev, [invoiceHash]: 'not-verified' }));
+            } else {
+                // null or undefined - API error or invoice not found
+                console.error('Failed to get status - received:', status);
+                setVerificationStatus(prev => ({ ...prev, [invoiceHash]: 'not-verified' }));
+            }
+        } catch (error) {
+            console.error('Verification failed:', error);
+            setVerificationStatus(prev => ({ ...prev, [invoiceHash]: 'not-verified' }));
+        }
+    };
 
     const handleSearch = async () => {
         if (!searchQuery.trim()) return
@@ -65,11 +91,7 @@ const Explorer = () => {
         if (e.key === 'Enter') handleSearch();
     };
 
-    const marketData = {
-        price: 10.80,
-        change: -3.49,
-        trend: [10, 12, 8, 11, 9, 15, 13, 16, 14, 18, 12, 10]
-    };
+
 
     // Derived Stats
     const totalVolume = transactions.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
@@ -98,37 +120,50 @@ const Explorer = () => {
             window.open(`https://testnet.explorer.provable.com/transaction/${txId}`, '_blank');
         }
     };
-
-
-
-    // Simple SVG Sparkline
-    const Sparkline = ({ data, color = "stroke-white" }: { data: number[], color?: string }) => {
-        const max = Math.max(...data);
-        const min = Math.min(...data);
-        const points = data.map((d, i) => {
-            const x = (i / (data.length - 1)) * 100;
-            const y = 100 - ((d - min) / (max - min)) * 100;
-            return `${x},${y}`;
-        }).join(' ');
-
+    const InvoiceGraph = ({ data, dates }: { data: number[], dates: string[] }) => {
+        const rawMax = Math.max(...data, 5);
+        const max = Math.ceil(rawMax * 1.1);
         return (
-            <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible preserve-3d">
-                <defs>
-                    <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor="white" stopOpacity="0.1" />
-                        <stop offset="100%" stopColor="white" stopOpacity="0" />
-                    </linearGradient>
-                </defs>
-                <path d={`M0,100 L0,${100 - ((data[0] - min) / (max - min)) * 100} ${points.split(' ').map(p => `L${p}`).join(' ')} L100,100 Z`} fill="url(#gradient)" className="opacity-50" />
-                <polyline
-                    fill="none"
-                    strokeWidth="2"
-                    points={points}
-                    className={`${color} vector-effect-non-scaling-stroke`}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            </svg>
+            <div className="w-full h-full relative flex flex-col">
+                <div className="flex-1 relative flex pb-6 border-b border-neon-primary/20">
+
+                    {/* Chart Area - Bars */}
+                    <div className="flex-1 flex items-end justify-between px-2 gap-1.5 h-full">
+                        {data.map((value, i) => {
+                            return (
+                                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group/bar relative">
+                                    {/* Tooltip - Only Invoice Count */}
+                                    <div className="absolute -top-8 opacity-0 group-hover/bar:opacity-100 transition-all duration-200 bg-gradient-to-br from-neon-primary/20 to-black/95 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-lg border border-neon-primary/40 whitespace-nowrap z-20 pointer-events-none shadow-[0_0_20px_rgba(0,243,255,0.3)]">
+                                        <div className="font-bold text-neon-primary">{value} {value === 1 ? 'Invoice' : 'Invoices'}</div>
+                                    </div>
+                                    <div
+                                        className={`w-full max-w-[14px] min-h-[3px] rounded-t-md transition-all duration-500 group-hover/bar:scale-105 relative overflow-hidden ${value > 0
+                                            ? 'bg-gradient-to-t from-neon-primary via-neon-primary/80 to-neon-primary/60 shadow-[0_0_10px_rgba(0,243,255,0.4)]'
+                                            : 'bg-white/5'
+                                            }`}
+                                        style={{
+                                            height: `${(value / max) * 100}%`,
+                                            opacity: value > 0 ? 1 : 0.3
+                                        }}
+                                    >
+                                        {value > 0 && (
+                                            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-white/40 opacity-0 group-hover/bar:opacity-100 transition-opacity duration-300" />
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {/* X Axis Labels - All 10 Days */}
+                <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[9px] text-gray-400 font-mono font-medium px-1">
+                    {dates.map((_, i) => {
+                        const label = i === 0 ? '10d' : i === dates.length - 1 ? 'Today' : `${10 - i}d`;
+                        return <span key={i} className="flex-1 text-center">{label}</span>;
+                    })}
+                </div>
+            </div>
         );
     };
 
@@ -145,8 +180,6 @@ const Explorer = () => {
                 <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] bg-zinc-800/20 rounded-full blur-[100px] animate-float-delayed" />
                 <div className="absolute bottom-[-10%] left-[20%] w-[35%] h-[35%] bg-white/5 rounded-full blur-[120px] animate-pulse-slow" />
             </div>
-
-            {/* ALEO GLOBE BACKGROUND */}
             <div className="absolute top-[-150px] left-1/2 -translate-x-1/2 w-screen h-[800px] z-0 pointer-events-none flex justify-center overflow-hidden">
                 <img
                     src="/assets/aleo_globe.png"
@@ -315,28 +348,45 @@ const Explorer = () => {
                     animate="show"
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
                 >
-
-                    {/* CARD 1: ALEO PRICE / ACTIVITY (Large) */}
-                    <GlassCard variants={itemVariants} className="col-span-1 md:col-span-2 row-span-2 p-8 flex flex-col justify-between group h-full">
-                        <div className="flex justify-between items-start mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center font-bold text-lg">A</div>
-                                <h3 className="text-2xl font-bold text-white">Aleo</h3>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-lg font-mono text-white">${marketData.price.toFixed(4)}</p>
-                                <span className={`text-xs font-bold px-2 py-1 rounded bg-white/10 ${marketData.change >= 0 ? 'text-white' : 'text-gray-400'}`}>
-                                    {marketData.change}%
-                                </span>
-                            </div>
+                    <GlassCard variants={itemVariants} className="col-span-1 md:col-span-2 row-span-2 p-8 flex flex-col justify-between group h-full relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-6 opacity-30 group-hover:opacity-100 transition-opacity duration-500">
+                            <svg className="w-8 h-8 text-neon-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
                         </div>
-                        <div className="h-32 w-full mt-auto">
-                            <Sparkline data={marketData.trend} />
+
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 rounded-lg bg-neon-primary/10 border border-neon-primary/20">
+                                    <svg className="w-5 h-5 text-neon-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white tracking-tight">Invoice Created</h3>
+                            </div>
+                            <p className="text-gray-500 text-[10px] font-mono tracking-widest uppercase mb-6 pl-1 opacity-70">LAST 10 DAYS</p>
+                        </div>
+
+                        <div className="flex-1 flex flex-col justify-end">
+                            <div className="h-40 w-full opacity-90 group-hover:opacity-100 transition-opacity duration-500">
+                                <InvoiceGraph
+                                    data={(() => {
+                                        const days = Array.from({ length: 10 }, (_, i) => {
+                                            const d = new Date();
+                                            d.setDate(d.getDate() - (9 - i));
+                                            return d.toISOString().split('T')[0];
+                                        });
+                                        return days.map(date =>
+                                            transactions.filter(t => (t.created_at || '').startsWith(date)).length
+                                        );
+                                    })()}
+                                    dates={(() => {
+                                        return Array.from({ length: 10 }, (_, i) => {
+                                            const d = new Date();
+                                            d.setDate(d.getDate() - (9 - i));
+                                            return d.toISOString().split('T')[0];
+                                        });
+                                    })()}
+                                />
+                            </div>
                         </div>
                     </GlassCard>
-
-                    {/* STATS FROM DB - Integrated into Grid */}
-                    {/* STATS FROM DB - Integrated into Grid */}
                     {stats.map((stat, i) => (
                         <GlassCard
                             key={i}
@@ -450,6 +500,54 @@ const Explorer = () => {
                                                                 {inv.payment_tx_ids && inv.payment_tx_ids.length > 1 ? `Tx (${inv.payment_tx_ids.length})` : 'Payment Tx'}
                                                             </button>
                                                         )}
+                                                    </div>
+
+                                                    {/* Verify On-Chain Button */}
+                                                    <div className="w-[140px] flex justify-end">
+                                                        <button
+                                                            onClick={() => handleVerifyOnChain(inv.invoice_hash)}
+                                                            disabled={verificationStatus[inv.invoice_hash] === 'verifying'}
+                                                            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border transition-all font-medium w-full justify-center ${verificationStatus[inv.invoice_hash] === 'verified'
+                                                                ? 'bg-green-900/20 border-green-500/30 text-green-400'
+                                                                : verificationStatus[inv.invoice_hash] === 'not-verified'
+                                                                    ? 'bg-red-900/20 border-red-500/30 text-red-400'
+                                                                    : verificationStatus[inv.invoice_hash] === 'verifying'
+                                                                        ? 'bg-yellow-900/20 border-yellow-500/30 text-yellow-400 cursor-wait'
+                                                                        : 'bg-purple-900/20 hover:bg-purple-900/40 border-purple-500/20 hover:border-purple-500/50 text-purple-400'
+                                                                }`}
+                                                            title="Verify invoice status on-chain"
+                                                        >
+                                                            {verificationStatus[inv.invoice_hash] === 'verifying' ? (
+                                                                <>
+                                                                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                    </svg>
+                                                                    Verifying...
+                                                                </>
+                                                            ) : verificationStatus[inv.invoice_hash] === 'verified' ? (
+                                                                <>
+                                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                    </svg>
+                                                                    Verified & Paid
+                                                                </>
+                                                            ) : verificationStatus[inv.invoice_hash] === 'not-verified' ? (
+                                                                <>
+                                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                    </svg>
+                                                                    Not Paid
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                                    </svg>
+                                                                    Verify On-Chain
+                                                                </>
+                                                            )}
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </td>

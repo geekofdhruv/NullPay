@@ -1,8 +1,3 @@
-// Aleo SDK / Helper functions
-// Ideally, these would use the @provablehq/sdk, but for now we mock or use basic string ops
-// since we assume the wallet adapter handles the heavy lifting for signing/proving.
-
-// NEW: Use Singular V7 Contract
 export const PROGRAM_ID = "zk_pay_proofs_privacy_v7.aleo";
 
 export const generateSalt = (): string => {
@@ -35,11 +30,27 @@ export const getInvoiceStatus = async (hash: string): Promise<number | null> => 
         if (res.ok) {
             const data = await res.json();
             if (data) {
-                const statusStr = data.status;
-                if (typeof statusStr === 'string') return parseInt(statusStr.replace('u8', ''));
-                if (typeof statusStr === 'number') return statusStr;
+                if (typeof data === 'string') {
+                    const statusMatch = data.match(/status:\s*(\d+)u8/);
+                    if (statusMatch && statusMatch[1]) {
+                        const statusValue = parseInt(statusMatch[1]);
+                        return statusValue;
+                    }
+                } else if (typeof data === 'object') {
+                    const statusStr = data.status;
+                    if (typeof statusStr === 'string') {
+                        const parsed = parseInt(statusStr.replace(/u8/g, '').trim());
+                        return parsed;
+                    }
+                    if (typeof statusStr === 'number') {
+                        return statusStr;
+                    }
+                }
             }
         }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error('Error fetching invoice status:', e);
+    }
+    console.log('Returning null - no valid status found');
     return null;
 };
