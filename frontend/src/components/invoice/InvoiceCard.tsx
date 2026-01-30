@@ -7,7 +7,6 @@ import { Button } from '../ui/Button';
 interface InvoiceCardProps {
     invoiceData: InvoiceData;
     resetInvoice: () => void;
-    expiry: string;
     memo: string;
 }
 

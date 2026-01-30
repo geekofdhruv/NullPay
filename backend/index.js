@@ -202,11 +202,11 @@ app.patch('/api/invoices/:hash', async (req, res) => {
         if (block_settled) updates.block_settled = block_settled;
 
         // Handle Payment TX ID (Append to array)
-        if (payment_tx_id) {
+        if (payment_tx_ids) {
             const currentIds = current.payment_tx_ids || [];
             // Avoid duplicates
-            if (!currentIds.includes(payment_tx_id)) {
-                updates.payment_tx_ids = [...currentIds, payment_tx_id];
+            if (!currentIds.includes(payment_tx_ids)) {
+                updates.payment_tx_ids = [...currentIds, payment_tx_ids];
             }
         }
 

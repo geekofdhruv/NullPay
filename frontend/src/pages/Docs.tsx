@@ -3,23 +3,6 @@ import { motion } from 'framer-motion';
 import { GlassCard } from '../components/ui/GlassCard';
 import { pageVariants, staggerContainer, fadeInUp } from '../utils/animations';
 
-/*
- * ALEO ZKPAY - COMPREHENSIVE TECHNICAL DOCUMENTATION
- * ==========================================================
- * This document serves as the authoritative source of truth for the entire NullPay protocol.
- * It details every component, every hook, every smart contract transition, and every
- * utilty function used in the production environment.
- * 
- * -- TABLE OF CONTENTS --
- * 1. CORE PHILOSOPHY & ARCHITECTURE
- * 2. SMART CONTRACT SPECIFICATION (Leo)
- * 3. CLIENT-SIDE LOGIC (Hooks & State)
- * 4. CRYPTOGRAPHIC PRIMITIVES (Hashing & Security)
- * 5. BACKEND INFRASTRUCTURE (Indexing)
- * 6. SECURITY THREAT MODEL & MITIGATIONS
- * 7. COMPLETE SOURCE CODE REFERENCE
- */
-
 const Docs = () => {
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -28,10 +11,10 @@ const Docs = () => {
 
     const tabs = [
         { id: 'overview', label: 'Overview' },
-        { id: 'contracts', label: 'Smart Contracts' },
-        { id: 'client', label: 'Client Logic' },
-        { id: 'security', label: 'Security' },
-        { id: 'source', label: 'Full Source Reference' },
+        { id: 'contracts', label: 'Smart Contract' },
+        { id: 'frontend', label: 'Frontend Logic' },
+        { id: 'backend', label: 'Backend API' },
+        { id: 'architecture', label: 'Architecture' },
     ];
 
     const CodeBlock = ({ title, code, language = 'typescript' }: { title: string; code: string; language?: string }) => (
@@ -78,16 +61,15 @@ const Docs = () => {
             >
                 <motion.div variants={itemVariants} className="text-center mb-12 border-b border-white/10 pb-10 flex flex-col items-center">
                     <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tighter text-white">
-                        Protocol <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Specification</span>
+                        Technical <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Documentation</span>
                     </h1>
                     <p className="text-gray-300 text-lg md:text-xl max-w-3xl leading-relaxed">
-                        The definitive technical reference for the NullPay decentralized payment protocol.
-                        This document provides exhaustive detail on the implementation of Zero-Knowledge Proofs for private financial settlements.
+                        Complete technical specification of the NullPay zero-knowledge payment protocol.
                     </p>
                 </motion.div>
 
-                {/* TABS - CENTERED */}
-                <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-4 mb-12 sticky top-24 z-50 bg-black/50 backdrop-blur-xl p-4 rounded-full border border-white/5 max-w-4xl mx-auto">
+                {/* TABS */}
+                <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-4 mb-12 sticky top-24 z-50 bg-black/50 backdrop-blur-xl p-4 rounded-full border border-white/5 max-w-5xl mx-auto">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
@@ -105,11 +87,7 @@ const Docs = () => {
                 {/* CONTENT AREA */}
                 <div className="min-h-[600px]">
 
-                    {/* 
-                     * ====================================================================================
-                     * SECTION 1: OVERVIEW & ARCHITECTURE
-                     * ====================================================================================
-                     */}
+                    {/* OVERVIEW */}
                     {activeTab === 'overview' && (
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
@@ -117,76 +95,78 @@ const Docs = () => {
                             className="space-y-12"
                         >
                             <GlassCard className="p-10">
-                                <h2 className="text-3xl font-bold text-white mb-6">1. Protocol Architecture</h2>
+                                <h2 className="text-3xl font-bold text-white mb-6">What is NullPay?</h2>
                                 <p className="text-gray-400 mb-8 leading-relaxed">
-                                    NullPay operates as a Layer-2 privacy application on top of the Aleo Layer-1 blockchain.
-                                    The architecture is designed to minimize on-chain data leakage while ensuring verifiable settlement correctness.
-                                    The system is composed of three primary layers:
+                                    NullPay is a privacy-first payment protocol built on Aleo. It enables merchants to create invoices
+                                    and receive payments without revealing sensitive transaction details on-chain.
                                 </p>
 
-                                <div className="space-y-12">
-                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
-                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
-                                        <h3 className="text-xl font-bold text-neon-primary mb-2">1. The Client Layer (React/WASM)</h3>
-                                        <p className="text-gray-400 mb-4 text-sm">
-                                            The frontend is not just a UI; it is a full cryptographic client. It is responsible for:
-                                        </p>
-                                        <ul className="list-disc pl-5 space-y-2 text-sm text-gray-300 mb-4">
-                                            <li><strong>Key Management:</strong> Interfacing with the Aleo Wallet Adapter to request signatures (but never private keys).</li>
-                                            <li><strong>Salt Generation:</strong> Using the browser's <code>crypto.getRandomValues()</code> CSPRNG to generate 128-bit blinding factors ("salts").</li>
-                                            <li><strong>Proof Generation:</strong> Orchestrating the generation of Zero-Knowledge Proofs for the <code>pay_invoice</code> transition.</li>
-                                            <li><strong>Invoice State Management:</strong> Tracking local invoice data that is never revealed to the server.</li>
-                                        </ul>
-                                    </div>
-
-                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
-                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
-                                        <h3 className="text-xl font-bold text-neon-primary mb-2">2. The Protocol Layer (Leo Smart Contract)</h3>
-                                        <p className="text-gray-400 mb-4 text-sm">
-                                            The destination for all valid state transitions. The contract <code>zk_pay_proofs_privacy_v6.aleo</code> acts as the root of trust.
-                                            Its primary responsibility is to <strong>verify</strong> that a payment matches an invoice hash without seeing the invoice details.
+                                <h3 className="text-xl font-bold text-neon-primary mb-4">Key Features</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <h4 className="text-white font-bold mb-2">Zero-Knowledge Invoices</h4>
+                                        <p className="text-sm text-gray-400">
+                                            Invoice details (merchant, amount) are hashed on-chain. Only the hash is public.
                                         </p>
                                     </div>
-
-                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
-                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
-                                        <h3 className="text-xl font-bold text-neon-primary mb-2">3. The Indexing Layer (Supabase/Node)</h3>
-                                        <p className="text-gray-400 mb-4 text-sm">
-                                            A purely optional layer for improved UX. It listens for on-chain events to update the Explorer UI.
-                                            Critically, even if this layer is compromised, <strong>user privacy is preserved</strong> because it only sees the public hashes and encrypted records.
+                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <h4 className="text-white font-bold mb-2">Private Payments</h4>
+                                        <p className="text-sm text-gray-400">
+                                            Payments use Aleo's <code className="text-neon-primary">transfer_private</code> to hide payer identity.
+                                        </p>
+                                    </div>
+                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <h4 className="text-white font-bold mb-2">Standard + Fundraising</h4>
+                                        <p className="text-sm text-gray-400">
+                                            Support for single-payment invoices and multi-contributor fundraising campaigns.
+                                        </p>
+                                    </div>
+                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <h4 className="text-white font-bold mb-2">Encrypted Metadata</h4>
+                                        <p className="text-sm text-gray-400">
+                                            Off-chain data is encrypted with AES-256 and stored securely in Supabase.
                                         </p>
                                     </div>
                                 </div>
                             </GlassCard>
 
                             <GlassCard className="p-10">
-                                <h2 className="text-3xl font-bold text-white mb-6">2. Data Flow Lifecycle</h2>
+                                <h2 className="text-3xl font-bold text-white mb-6">How It Works</h2>
                                 <div className="space-y-8">
-                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
-                                        <h4 className="text-neon-accent font-bold mb-2">Step 1: Invoice Creation (Merchant)</h4>
+                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
+                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
+                                        <h3 className="text-xl font-bold text-white mb-2">1. Invoice Creation (Merchant)</h3>
                                         <ol className="list-decimal pl-5 text-sm text-gray-400 space-y-2">
-                                            <li>Merchant inputs Amount (e.g., 100) and Expiry.</li>
-                                            <li>Client generates random Salt <code>S</code> (128-bit).</li>
-                                            <li>Client computes <code>Hash = BHP256(MerchantAddr) + BHP256(Amount) + BHP256(Salt)</code>.</li>
-                                            <li>Client sends <code>create_invoice(Hash, Expiry)</code> to chain.</li>
-                                            <li><strong>Privacy Result:</strong> The chain only sees the random Hash. Merchant and Amount are hidden.</li>
+                                            <li>Merchant enters <strong>Amount</strong> and <strong>Invoice Type</strong> (Standard or Fundraising).</li>
+                                            <li>Client generates random <code>Salt</code> (128-bit).</li>
+                                            <li>Client computes <code>Hash = BHP256(Merchant) + BHP256(Amount) + BHP256(Salt)</code>.</li>
+                                            <li>Transaction <code>create_invoice(merchant, amount, salt, 0u32, type)</code> is sent to chain.</li>
+                                            <li>On-chain mapping stores <code>Salt → Hash</code> and <code>Hash → InvoiceData</code>.</li>
                                         </ol>
                                     </div>
 
-                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
-                                        <h4 className="text-neon-accent font-bold mb-2">Step 2: Invoice Payment (Payer)</h4>
+                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
+                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
+                                        <h3 className="text-xl font-bold text-white mb-2">2. Payment (Payer)</h3>
                                         <ol className="list-decimal pl-5 text-sm text-gray-400 space-y-2">
-                                            <li>Payer receives link with <code>Amount, MerchantAddr, Salt</code> (Off-chain channel).</li>
-                                            <li>Client verifies integrity: Recomputes Hash from params and checks if Hash exists on-chain.</li>
-                                            <li>Client identifies a private record <code>R</code> owned by Payer with <code>value {'>'} Amount</code>.</li>
-                                            <li>Client calls <code>pay_invoice(R, MerchantAddr, Amount, Salt)</code>.</li>
-                                            <li><strong>ZK Proof Generation:</strong> The client generates a proof that:
-                                                <ul className="list-disc pl-5 mt-1 text-gray-500">
-                                                    <li>Record <code>R</code> is valid and unspent.</li>
-                                                    <li>User owns Record <code>R</code>.</li>
-                                                    <li><code>BHP256(Merchant) + BHP256(Amount) + BHP256(Salt) == Stored_Hash</code>.</li>
-                                                </ul>
-                                            </li>
+                                            <li>Payer receives link with <code>merchant, amount, salt</code>.</li>
+                                            <li>Client verifies hash on-chain using the salt.</li>
+                                            <li>Client finds a private record with sufficient balance.</li>
+                                            <li>Client generates a unique <code>payment_secret</code> for receipt tracking.</li>
+                                            <li>Transaction <code>pay_invoice(record, merchant, amount, salt, payment_secret, message)</code> is executed.</li>
+                                            <li>Payment is completed via <code>transfer_private</code>, keeping payer anonymous.</li>
+                                            <li><strong>Standard Invoice:</strong> Invoice is marked as settled (status = 1) and closed.</li>
+                                            <li><strong>Fundraising Invoice:</strong> Payment receipt is stored in <code>payment_receipts</code> mapping. Invoice remains open for more payments.</li>
+                                        </ol>
+                                    </div>
+
+                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
+                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
+                                        <h3 className="text-xl font-bold text-white mb-2">3. Settlement (Merchant - Fundraising Only)</h3>
+                                        <ol className="list-decimal pl-5 text-sm text-gray-400 space-y-2">
+                                            <li>Merchant calls <code>settle_invoice(salt, amount)</code> to close a fundraising campaign.</li>
+                                            <li>Contract verifies merchant identity by recomputing hash with <code>self.caller</code>.</li>
+                                            <li>Invoice status is updated to settled (status = 1), preventing future payments.</li>
                                         </ol>
                                     </div>
                                 </div>
@@ -194,11 +174,7 @@ const Docs = () => {
                         </motion.div>
                     )}
 
-                    {/* 
-                     * ====================================================================================
-                     * SECTION 2: SMART CONTRACT SPECIFICATION (Leo)
-                     * ====================================================================================
-                     */}
+                    {/* SMART CONTRACT */}
                     {activeTab === 'contracts' && (
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
@@ -206,342 +182,279 @@ const Docs = () => {
                             className="space-y-8"
                         >
                             <GlassCard className="p-8">
-                                <h2 className="text-2xl font-bold text-white mb-4">Smart Contract Logic</h2>
+                                <h2 className="text-2xl font-bold text-white mb-4">Smart Contract Specification</h2>
                                 <p className="text-gray-400 mb-6">
-                                    The smart contract is written in Leo (Aleo's zero-knowledge specific language). It enforces the business logic of the payment channel.
+                                    The contract is deployed as <strong className="text-neon-primary">zk_pay_proofs_privacy_v7.aleo</strong>.
+                                    It supports both Standard (single-payment) and Fundraising (multi-payment) invoices.
                                 </p>
+                                <div className="mb-6 p-4 bg-black/40 rounded-xl border border-neon-primary/20">
+                                    <p className="text-sm text-gray-400 mb-2">View on Aleo Testnet Explorer:</p>
+                                    <a
+                                        href="https://testnet.explorer.provable.com/program/zk_pay_proofs_privacy_v7.aleo"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-neon-primary hover:text-white transition-colors font-mono text-sm underline"
+                                    >
+                                        https://testnet.explorer.provable.com/program/zk_pay_proofs_privacy_v7.aleo
+                                    </a>
+                                </div>
 
+                                <h3 className="text-xl font-bold text-white mb-4">Data Structures</h3>
                                 <CodeBlock
-                                    title="CONTRACT STORAGE & STRUCTS"
+                                    title="Contract Storage"
+                                    language="leo"
                                     code={`struct InvoiceData {
     expiry_height: u32,
-    status: u8
+    status: u8,        // 0 = Open, 1 = Settled/Paid
+    invoice_type: u8   // 0 = Standard, 1 = Fundraising
 }
 
-// Mappings represent the persistent on-chain state
-// Mapping 1: Hash -> Metadata (Status, Expiry)
+// Invoice Storage
 mapping invoices: field => InvoiceData;
+mapping salt_to_invoice: field => field;
 
-// Mapping 2: Salt -> Hash (Reverse lookup for verify correctness)
-mapping salt_to_invoice: field => field;`}
+// Payment Receipts for Fundraising Verification
+// Key: Hash(payment_secret, invoice_salt)
+// Value: amount_paid
+mapping payment_receipts: field => u64;`}
                                 />
 
-                                <div className="my-8 border-t border-white/10" />
+                                <h3 className="text-xl font-bold text-white mb-4 mt-8">Transitions</h3>
 
-                                <h3 className="text-xl font-bold text-white mb-4">Core Transition: pay_invoice</h3>
-                                <p className="text-gray-400 mb-4 text-sm">
-                                    The `pay_invoice` function is the most critical security boundary. It accepts a private record (money) and private parameters, and performs a private transfer.
-                                    Crucially, it re-calculates the hash <strong>inside the zero-knowledge circuit</strong>. If the inputs provided by the payer do not match the hash created by the merchant, the proof generation fails, and the transaction is invalid.
+                                <h4 className="text-lg font-semibold text-neon-accent mb-2">1. create_invoice</h4>
+                                <p className="text-sm text-gray-400 mb-4">
+                                    Creates a new invoice (Standard or Fundraising). The merchant address and amount are hashed to preserve privacy.
                                 </p>
-
                                 <CodeBlock
-                                    title="TRANSITION: PAY_INVOICE (LEO)"
+                                    title="create_invoice"
+                                    language="leo"
+                                    code={`async transition create_invoice(
+    private merchant: address,
+    private amount: u64,
+    private salt: field,
+    public expiry_hours: u32,
+    public invoice_type: u8  // 0 = Standard, 1 = Fundraising
+) -> (public field, Future) {
+    let merchant_field: field = merchant as field;
+    let amount_field: field = amount as field;
+
+    let merchant_hash: field = BHP256::hash_to_field(merchant_field);
+    let amount_hash: field = BHP256::hash_to_field(amount_field);
+    let salt_hash: field = BHP256::hash_to_field(salt);
+
+    let invoice_hash: field = merchant_hash + amount_hash + salt_hash;
+
+    return (invoice_hash, finalize_create_invoice(invoice_hash, expiry_hours, salt, invoice_type));
+}
+
+async function finalize_create_invoice(
+    invoice_hash: field,
+    expiry_hours: u32,
+    salt: field,
+    invoice_type: u8
+) {
+    // Calculate expiry block height
+    let blocks_to_add: u32 = expiry_hours * 360u32;
+    let expiry_height: u32 = expiry_hours != 0u32 ? block.height + blocks_to_add : 0u32;
+
+    let invoice_data: InvoiceData = InvoiceData {
+        expiry_height: expiry_height,
+        status: 0u8,              // Open
+        invoice_type: invoice_type // Standard or Fundraising
+    };
+
+    invoices.set(invoice_hash, invoice_data);
+    salt_to_invoice.set(salt, invoice_hash);
+}`}
+                                />
+
+                                <h4 className="text-lg font-semibold text-neon-accent mb-2 mt-8">2. pay_invoice</h4>
+                                <p className="text-sm text-gray-400 mb-4">
+                                    Pays an invoice. For Standard invoices, this closes the invoice. For Fundraising, the invoice remains open for additional payments.
+                                    Uses a <code className="text-neon-primary">payment_secret</code> to create unique payment receipts.
+                                </p>
+                                <CodeBlock
+                                    title="pay_invoice"
+                                    language="leo"
                                     code={`async transition pay_invoice(
-    pay_record: credits.aleo/credits, // INPUT: The private money record
-    merchant: address,                // PRIVATE: The receiver
-    amount: u64,                      // PRIVATE: Amount to send
-    salt: field                       // PRIVATE: The integrity key
+    pay_record: credits.aleo/credits,
+    merchant: address,
+    amount: u64,
+    salt: field,
+    private payment_secret: field,  // Unique per payment for receipt tracking
+    public message: field            // Can be invoice_hash for public tracking
 ) -> (credits.aleo/credits, credits.aleo/credits, Future) {
-    
-    // 1. EXECUTE PRIVATE TRANSFER
-    // This consumes 'pay_record' and creates two new records:
-    // r1: The change record (sent back to sender)
-    // r2: The payment record (sent to merchant)
-    // This is a standard Aleo primitive call.
+    // Execute private transfer
     let (r1, r2): (credits.aleo/credits, credits.aleo/credits) = 
         credits.aleo/transfer_private(pay_record, merchant, amount);
     
-    // 2. RE-COMPUTE HASH
-    // We strictly enforce that the merchant and amount being paid 
-    // MATCH the ones originally committed to the has map.
-    let merchant_hash: field = BHP256::hash_to_field(merchant as field);
-    let amount_hash: field = BHP256::hash_to_field(amount as field);
+    // Recompute invoice hash
+    let merchant_field: field = merchant as field;
+    let amount_field: field = amount as field;
+    
+    let merchant_hash: field = BHP256::hash_to_field(merchant_field);
+    let amount_hash: field = BHP256::hash_to_field(amount_field);
     let salt_hash: field = BHP256::hash_to_field(salt);
     
-    // Additive combination is cheaper on gas than a nested hash
-    let computed_hash: field = merchant_hash + amount_hash + salt_hash;
+    let invoice_hash: field = merchant_hash + amount_hash + salt_hash;
+    
+    // Create payment receipt key
+    let salt_scalar: scalar = BHP256::hash_to_scalar(salt);
+    let receipt_key: field = BHP256::commit_to_field(payment_secret, salt_scalar);
 
-    // 3. ENQUEUE FINALIZATION
-    // The actual check against storage happens in 'finalize', 
-    // but the inputs are committed here.
-    return (r1, r2, finalize_pay_invoice(computed_hash, salt));
+    return (r1, r2, finalize_pay_invoice(invoice_hash, salt, receipt_key, amount));
+}
+
+async function finalize_pay_invoice(
+    computed_hash: field, 
+    salt: field,
+    receipt_key: field,
+    amount: u64
+) {
+    // Verify invoice exists
+    let stored_hash: field = salt_to_invoice.get(salt);
+    assert_eq(computed_hash, stored_hash);  // CRITICAL: Hash must match
+
+    let invoice_data: InvoiceData = invoices.get(stored_hash);
+
+    // Check expiry
+    if invoice_data.expiry_height != 0u32 {
+        assert(block.height <= invoice_data.expiry_height);
+    }
+
+    // Standard Invoice (Type 0): Close after first payment
+    if (invoice_data.invoice_type == 0u8) {
+        assert_eq(invoice_data.status, 0u8);  // Must be open
+        
+        let updated_data: InvoiceData = InvoiceData {
+            expiry_height: invoice_data.expiry_height,
+            status: 1u8,  // Mark as settled
+            invoice_type: invoice_data.invoice_type
+        };
+        invoices.set(stored_hash, updated_data);
+    }
+
+    // Fundraising Invoice (Type 1): Stay open, store receipt
+    // Prevent duplicate payments with same secret
+    let exists: bool = payment_receipts.contains(receipt_key);
+    assert(!exists);
+
+    payment_receipts.set(receipt_key, amount);
+}`}
+                                />
+
+                                <h4 className="text-lg font-semibold text-neon-accent mb-2 mt-8">3. settle_invoice</h4>
+                                <p className="text-sm text-gray-400 mb-4">
+                                    Allows the merchant to manually close a fundraising campaign. Only the merchant (verified via hash reconstruction) can call this.
+                                </p>
+                                <CodeBlock
+                                    title="settle_invoice"
+                                    language="leo"
+                                    code={`async transition settle_invoice(
+    public salt: field,
+    private amount: u64
+) -> (Future) {
+    // Verify merchant ownership by recomputing hash
+    let merchant_field: field = self.caller as field;
+    let amount_field: field = amount as field;
+    
+    let merchant_hash: field = BHP256::hash_to_field(merchant_field);
+    let amount_hash: field = BHP256::hash_to_field(amount_field);
+    let salt_hash: field = BHP256::hash_to_field(salt);
+    
+    let calculated_hash: field = merchant_hash + amount_hash + salt_hash;
+    
+    return finalize_settle_invoice(calculated_hash, salt);
+}
+
+async function finalize_settle_invoice(
+    calculated_hash: field,
+    salt: field
+) {
+    // Verify invoice exists
+    let stored_hash: field = salt_to_invoice.get(salt);
+    assert_eq(calculated_hash, stored_hash);  // Only merchant can settle
+    
+    // Mark as settled
+    let invoice_data: InvoiceData = invoices.get(stored_hash);
+    let updated_data: InvoiceData = InvoiceData {
+        expiry_height: invoice_data.expiry_height,
+        status: 1u8,  // Closed
+        invoice_type: invoice_data.invoice_type
+    };
+    
+    invoices.set(stored_hash, updated_data);
 }`}
                                 />
                             </GlassCard>
                         </motion.div>
                     )}
 
-                    {/* 
-                     * ====================================================================================
-                     * SECTION 3: CLIENT SIDE LOGIC
-                     * ====================================================================================
-                     */}
-                    {activeTab === 'client' && (
+                    {/* FRONTEND */}
+                    {activeTab === 'frontend' && (
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             className="space-y-8"
                         >
                             <GlassCard className="p-8">
-                                <h2 className="text-2xl font-bold text-white mb-6">Client-Side Implementation (Hooks)</h2>
-                                <p className="text-gray-400 mb-8">
-                                    The React application manages the complex orchestration required for Aleo transactions.
-                                    We use custom hooks to encapsulate the state machines for Invoice Creation and Payment.
+                                <h2 className="text-2xl font-bold text-white mb-6">Frontend Architecture</h2>
+
+                                <h3 className="text-xl font-bold text-neon-accent mb-4">Hook: useCreateInvoice</h3>
+                                <p className="text-gray-400 text-sm mb-4">
+                                    Manages the invoice creation flow for merchants.
                                 </p>
+                                <CodeBlock
+                                    title="useCreateInvoice.ts (Core Logic)"
+                                    code={`const handleCreate = async () => {
+    const merchant = publicKey;
+    const salt = generateSalt();
+    const typeInput = invoiceType === 'standard' ? '0u8' : '1u8';
+    const amountMicro = Math.round(Number(amount) * 1_000_000);
 
-                                <div className="space-y-8">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-neon-accent mb-2">Hook: useCreateInvoice</h3>
-                                        <p className="text-gray-400 text-sm mb-4">
-                                            This hook manages the "Merchant" persona. It handles random generation and the eventual on-chain broadcasting.
-                                        </p>
-                                        <CodeBlock
-                                            title="useCreateInvoice.ts (Core Logic)"
-                                            code={`// 1. SALT GENERATION
-const salt = generateSalt(); // Uses CSPRNG
+    const inputs = [
+        publicKey,
+        \`\${amountMicro}u64\`,
+        salt,
+        '0u32',  // expiry disabled
+        typeInput
+    ];
 
-// 2. PREPARE INPUTS
-const microcredits = Math.round(Number(amount) * 1_000_000);
-const inputs = [
-    merchant,
-    \`\${microcredits}u64\`,
-    salt,
-    \`\${expiry}u32\`
-];
+    const transaction: TransactionOptions = {
+        program: PROGRAM_ID,  // zk_pay_proofs_privacy_v7.aleo
+        function: 'create_invoice',
+        inputs: inputs,
+        fee: 100_000,
+        privateFee: false
+    };
 
-// 3. EXECUTE TRANSACTION
-const transaction: TransactionOptions = {
-    program: 'zk_pay_proofs_privacy_v6.aleo',
-    function: 'create_invoice',
-    inputs: inputs,
-    fee: 100_000
-};
+    const result = await executeTransaction(transaction);
+    // Poll for invoice hash from on-chain mapping
+};`}
+                                />
 
-// 4. VERIFY & POLL
-// Once broadcast, we must poll the chain to verify inclusion
-// and retrieve the final Invoice Hash for the UI to display.`}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <h3 className="text-xl font-bold text-neon-accent mb-2">Hook: usePayment</h3>
-                                        <p className="text-gray-400 text-sm mb-4">
-                                            This hook manages the "Payer" persona. It is significantly more complex because it must interact with the user's private records (credits).
-                                        </p>
-                                        <CodeBlock
-                                            title="usePayment.ts (Record Selection Logic)"
-                                            code={`// STRATEGY: Find a single record to cover the payment
+                                <h3 className="text-xl font-bold text-neon-accent mb-4 mt-8">Hook: usePayment</h3>
+                                <p className="text-gray-400 text-sm mb-4">
+                                    Manages the payment flow for payers. Handles record selection and private transfers.
+                                </p>
+                                <CodeBlock
+                                    title="usePayment.ts (Record Selection)"
+                                    code={`// Find a single record to cover the payment
 const payRecord = recordsAny.find(r => {
     const val = getMicrocredits(r.data);
     const isSpendable = !!(r.plaintext || r.nonce);
     return !r.spent && isSpendable && val > amountMicro;
 });
 
-// FALLBACK: If no single record exists, we must "Merge" records
-// This is done via a 'public_to_private' or 'join' transaction
 if (!payRecord) {
-    setStatus('Insufficient single record. Merging...');
-    // Trigger conversion logic
-}`}
-                                        />
-                                    </div>
-                                </div>
-                            </GlassCard>
-                        </motion.div>
-                    )}
-
-                    {/* 
-                     * ====================================================================================
-                     * SECTION 4: SECURITY
-                     * ====================================================================================
-                     */}
-                    {activeTab === 'security' && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="grid grid-cols-1 md:grid-cols-2 gap-8"
-                        >
-                            <GlassCard className="p-8 border-t-4 border-t-zinc-600">
-                                <h2 className="text-2xl font-bold text-white mb-4">Threat Model Analysis</h2>
-                                <div className="space-y-6">
-                                    <div>
-                                        <h3 className="text-gray-400 font-bold text-sm uppercase tracking-wider mb-2">1. The Salt Brute-Force Attack</h3>
-                                        <p className="text-sm text-gray-500">
-                                            <strong>Attack Vector:</strong> An adversary attempts to guess the <code>(Merchant, Amount)</code> pair by hashing all possible combinations and comparing them to on-chain hashes.
-                                        </p>
-                                        <p className="text-white text-sm mt-2 border-l-2 border-white pl-3">
-                                            <strong>Mitigation:</strong> We utilize a **128-bit random salt**. The search space is <code>2^128</code>, which is thermodynamically impossible to brute-force with current or near-future computing power.
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="text-gray-400 font-bold text-sm uppercase tracking-wider mb-2">2. Double Spending</h3>
-                                        <p className="text-sm text-gray-500">
-                                            <strong>Attack Vector:</strong> A user tries to pay an invoice twice, or use the same credits record for two different payments.
-                                        </p>
-                                        <p className="text-white text-sm mt-2 border-l-2 border-white pl-3">
-                                            <strong>Mitigation:</strong> Aleo's native consensus handles record serial numbers (nonces). Once a record is consumed in `pay_invoice`, its serial number is revealed on-chain, preventing any future use.
-                                        </p>
-                                    </div>
-                                </div>
-                            </GlassCard>
-
-                            <GlassCard className="p-8 border-t-4 border-t-white">
-                                <h2 className="text-2xl font-bold text-white mb-4">Cryptographic Properties</h2>
-                                <div className="space-y-6">
-                                    <div>
-                                        <h3 className="text-white font-bold text-sm uppercase tracking-wider mb-2">1. Collision Resistance (BHP256)</h3>
-                                        <p className="text-sm text-gray-500">
-                                            We rely on the **Bowed-Mercurial Hash (BHP256)**, a variant of Pedersen Hash optimized for SNARK circuits. It provides collision resistance suitable for 128-bit security levels.
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="text-white font-bold text-sm uppercase tracking-wider mb-2">2. Zero-Knowledge Soundness</h3>
-                                        <p className="text-sm text-gray-500">
-                                            The proving system (Marlin/Varuna) guarantees that it is computationally infeasible to generate a valid proof for `pay_invoice` unless the prover actually knows the witness data (the record and salt).
-                                        </p>
-                                    </div>
-                                </div>
-                            </GlassCard>
-                        </motion.div>
-                    )}
-
-                    {/* 
-                     * ====================================================================================
-                     * SECTION 5: COMPLETE SOURCE REFERENCE
-                     * ====================================================================================
-                     */}
-                    {activeTab === 'source' && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="space-y-12"
-                        >
-                            <GlassCard className="p-8">
-                                <h2 className="text-3xl font-bold text-white mb-8 block border-b border-white/10 pb-4">
-                                    Full Source Code Reference
-                                </h2>
-                                <p className="text-gray-400 mb-8">
-                                    In the interest of full transparency and verifiability, the complete, unredacted source code for the core components is provided below.
-                                </p>
-
-                                <CodeBlock
-                                    title="/contracts/zk_pay/src/main.leo"
-                                    code={`import credits.aleo;
-
-program zk_pay_proofs_privacy_v6.aleo {
-
-    @noupgrade
-    async constructor() {
-        // The Leo compiler automatically generates the constructor logic.
-    }
-
-    struct InvoiceData {
-        expiry_height: u32,
-        status: u8
-    }
-
-    mapping invoices: field => InvoiceData;
-    mapping salt_to_invoice: field => field;
-
-    async transition create_invoice(
-        private merchant: address,
-        private amount: u64,
-        private salt: field,
-        public expiry_hours: u32
-    ) -> (public field, Future) {
-        let merchant_field: field = merchant as field; 
-        let amount_field: field = amount as field;
-
-        let merchant_hash: field = BHP256::hash_to_field(merchant_field);
-        let amount_hash: field = BHP256::hash_to_field(amount_field);
-        let salt_hash: field = BHP256::hash_to_field(salt);
-
-        let invoice_hash: field = merchant_hash + amount_hash + salt_hash;
-
-        return (invoice_hash, finalize_create_invoice(invoice_hash, expiry_hours, salt));
-    }
-
-    async function finalize_create_invoice(
-        invoice_hash: field,
-        expiry_hours: u32,
-        salt: field
-    ) {
-        let blocks_to_add: u32 = expiry_hours * 360u32;
-        let expiry_height: u32 =
-            expiry_hours != 0u32 ? block.height + blocks_to_add : 0u32;
-
-        let invoice_data: InvoiceData = InvoiceData {
-            expiry_height: expiry_height,
-            status: 0u8
-        };
-
-        invoices.set(invoice_hash, invoice_data);
-        salt_to_invoice.set(salt, invoice_hash);
-    }
-
-    async transition pay_invoice(
-        pay_record: credits.aleo/credits,
-        merchant: address,
-        amount: u64,
-        salt: field
-    ) -> (credits.aleo/credits, credits.aleo/credits, Future) {
-        let (r1, r2): (credits.aleo/credits, credits.aleo/credits) = 
-            credits.aleo/transfer_private(pay_record, merchant, amount);
-        let merchant_field: field = merchant as field; 
-        let amount_field: field = amount as field;
-        
-        let merchant_hash: field = BHP256::hash_to_field(merchant_field);
-        let amount_hash: field = BHP256::hash_to_field(amount_field);
-        let salt_hash: field = BHP256::hash_to_field(salt);
-        
-        let computed_hash: field = merchant_hash + amount_hash + salt_hash;
-
-        let f0: Future = finalize_pay_invoice(computed_hash, salt);
-        return (r1, r2, f0);
-    }
-
-    async function finalize_pay_invoice(
-        computed_hash: field, 
-        salt: field
-    ) {
-        // Enforce that the provided salt maps to an invoice
-        let stored_hash: field = salt_to_invoice.get(salt);
-        
-        // Ensure the computed parameters match the registered invoice for this salt
-        assert_eq(computed_hash, stored_hash);
-
-        let invoice_data: InvoiceData = invoices.get(stored_hash);
-
-        if invoice_data.expiry_height != 0u32 {
-            assert(block.height <= invoice_data.expiry_height);
-        }
-
-        assert_eq(invoice_data.status, 0u8);
-
-        let updated_data: InvoiceData = InvoiceData {
-            expiry_height: invoice_data.expiry_height,
-            status: 1u8
-        };
-
-        invoices.set(stored_hash, updated_data);
-    }
-
-    async transition get_invoice_status(
-        public invoice_hash: field
-    ) -> Future {
-        return finalize_get_invoice_status(invoice_hash);
-    }
-
-    async function finalize_get_invoice_status(invoice_hash: field) {
-        let invoice_data: InvoiceData = invoices.get(invoice_hash);
-    }
+    // Trigger 'transfer_public_to_private' conversion flow
+    setStep('CONVERT');
 }`}
                                 />
 
+                                <h3 className="text-xl font-bold text-neon-accent mb-4 mt-8">Utility: generateSalt</h3>
                                 <CodeBlock
-                                    title="/frontend/src/utils/aleo-utils.ts"
+                                    title="aleo-utils.ts"
                                     code={`export const generateSalt = (): string => {
     const randomBuffer = new Uint8Array(16);
     crypto.getRandomValues(randomBuffer);
@@ -550,72 +463,168 @@ program zk_pay_proofs_privacy_v6.aleo {
         randomBigInt = (randomBigInt << 8n) + BigInt(byte);
     }
     return \`\${randomBigInt}field\`;
-};
-
-export const getInvoiceHashFromMapping = async (salt: string): Promise<string | null> => {
-    console.log(\`Checking salt mapping for \${salt}...\`);
-    try {
-        const programId = 'zk_pay_proofs_privacy_v6.aleo';
-        const mappingName = 'salt_to_invoice';
-        const url = \`https://api.provable.com/v2/testnet/program/\${programId}/mapping/\${mappingName}/\${salt}\`;
-
-        const response = await fetch(url);
-        if (!response.ok) return null;
-
-        const val = await response.json();
-
-        if (val === null) {
-            console.warn("Mapping returned 200 OK but value is null (Key not found).");
-            return null;
-        }
-
-        if (val) {
-            console.log("✅ Found Hash via On-Chain Mapping!");
-            return val.toString().replace(/(['"])/g, '');
-        }
-    } catch (e) {
-        console.warn("Mapping lookup failed:", e);
-    }
-    return null;
-};
-
-export const getInvoiceStatus = async (hash: string): Promise<number | null> => {
-    console.log(\`Checking invoice status for hash \${hash}...\`);
-    try {
-        const programId = 'zk_pay_proofs_privacy_v6.aleo';
-        const mappingName = 'invoices';
-        const url = \`https://api.provable.com/v2/testnet/program/\${programId}/mapping/\${mappingName}/\${hash}\`;
-
-        const response = await fetch(url);
-        if (!response.ok) return null;
-
-        const val = await response.json();
-        console.log("Invoice Data Raw:", val);
-
-        if (typeof val === 'string') {
-            const match = val.match(/status:\\s*(\\d+)u8/);
-            if (match && match[1]) {
-                return parseInt(match[1]);
-            }
-        } else if (typeof val === 'object' && val !== null) {
-            // Handle if API returns direct JSON object
-            if ('status' in val) {
-                // Check if it's a number or a string like "1u8"
-                const statusVal = val.status;
-                if (typeof statusVal === 'number') return statusVal;
-                if (typeof statusVal === 'string') {
-                    return parseInt(statusVal.replace('u8', ''));
-                }
-            }
-        }
-
-        return null;
-    } catch (e) {
-        console.warn("Invoice status lookup failed:", e);
-        return null;
-    }
 };`}
                                 />
+                            </GlassCard>
+                        </motion.div>
+                    )}
+
+                    {/* BACKEND */}
+                    {activeTab === 'backend' && (
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="space-y-8"
+                        >
+                            <GlassCard className="p-8">
+                                <h2 className="text-2xl font-bold text-white mb-6">Backend Infrastructure</h2>
+                                <p className="text-gray-400 mb-6">
+                                    The backend is a Node.js/Express API that indexes on-chain invoices and stores metadata in Supabase.
+                                </p>
+
+                                <h3 className="text-xl font-bold text-white mb-4">Key Components</h3>
+                                <ul className="list-disc pl-5 text-sm text-gray-400 space-y-2 mb-8">
+                                    <li><strong>Supabase Database:</strong> Stores encrypted invoice metadata</li>
+                                    <li><strong>AES-256 Encryption:</strong> Merchant and payer addresses are encrypted at rest</li>
+                                    <li><strong>REST API:</strong> Provides endpoints for fetching invoices and updating statuses</li>
+                                </ul>
+
+                                <h3 className="text-xl font-bold text-white mb-4">Encryption System</h3>
+                                <CodeBlock
+                                    title="encryption.js"
+                                    code={`const crypto = require('crypto');
+
+const ALGORITHM = 'aes-256-cbc';
+const SECRET_KEY = process.env.ENCRYPTION_KEY;
+
+function encrypt(text) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(SECRET_KEY, 'hex'), iv);
+    let encrypted = cipher.update(text);
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text) {
+    const parts = text.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const encrypted = Buffer.from(parts[1], 'hex');
+    const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(SECRET_KEY, 'hex'), iv);
+    let decrypted = decipher.update(encrypted);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString();
+}`}
+                                />
+
+                                <h3 className="text-xl font-bold text-white mb-4 mt-8">API Endpoints</h3>
+                                <div className="space-y-4">
+                                    <div className="bg-black/40 p-4 rounded-xl border border-white/5">
+                                        <code className="text-neon-primary">GET /api/invoices</code>
+                                        <p className="text-sm text-gray-400 mt-2">Fetch all invoices (decrypted)</p>
+                                    </div>
+                                    <div className="bg-black/40 p-4 rounded-xl border border-white/5">
+                                        <code className="text-neon-primary">GET /api/invoice/:hash</code>
+                                        <p className="text-sm text-gray-400 mt-2">Fetch a single invoice by hash</p>
+                                    </div>
+                                    <div className="bg-black/40 p-4 rounded-xl border border-white/5">
+                                        <code className="text-neon-primary">GET /api/invoices/merchant/:address</code>
+                                        <p className="text-sm text-gray-400 mt-2">Fetch all invoices for a merchant (decrypted and filtered)</p>
+                                    </div>
+                                    <div className="bg-black/40 p-4 rounded-xl border border-white/5">
+                                        <code className="text-neon-primary">POST /api/invoices</code>
+                                        <p className="text-sm text-gray-400 mt-2">Create a new invoice entry</p>
+                                    </div>
+                                    <div className="bg-black/40 p-4 rounded-xl border border-white/5">
+                                        <code className="text-neon-primary">PATCH /api/invoices/:hash</code>
+                                        <p className="text-sm text-gray-400 mt-2">Update invoice status (e.g., mark as SETTLED)</p>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                        </motion.div>
+                    )}
+                    {activeTab === 'architecture' && (
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="space-y-8"
+                        >
+                            <GlassCard className="p-8">
+                                <h2 className="text-2xl font-bold text-white mb-6">System Architecture</h2>
+
+                                <div className="space-y-12">
+                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
+                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
+                                        <h3 className="text-xl font-bold text-neon-primary mb-2">Layer 1: Frontend (React + WASM)</h3>
+                                        <p className="text-gray-400 text-sm mb-4">
+                                            The client is responsible for:
+                                        </p>
+                                        <ul className="list-disc pl-5 space-y-2 text-sm text-gray-300">
+                                            <li>Generating salts using <code>crypto.getRandomValues()</code></li>
+                                            <li>Interfacing with the Aleo Wallet Adapter</li>
+                                            <li>Computing invoice hashes client-side</li>
+                                            <li>Submitting transactions to the Aleo network</li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
+                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
+                                        <h3 className="text-xl font-bold text-neon-primary mb-2">Layer 2: Smart Contract (Leo)</h3>
+                                        <p className="text-gray-400 text-sm mb-4">
+                                            The on-chain protocol enforces:
+                                        </p>
+                                        <ul className="list-disc pl-5 space-y-2 text-sm text-gray-300">
+                                            <li>Hash integrity verification</li>
+                                            <li>Invoice status management (Pending → Settled)</li>
+                                            <li>Private transfers via <code>credits.aleo</code></li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="relative pl-8 border-l-2 border-neon-primary/30">
+                                        <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-neon-primary border-4 border-black" />
+                                        <h3 className="text-xl font-bold text-neon-primary mb-2">Layer 3: Indexer + Database (Node.js + Supabase)</h3>
+                                        <p className="text-gray-400 text-sm mb-4">
+                                            The backend provides:
+                                        </p>
+                                        <ul className="list-disc pl-5 space-y-2 text-sm text-gray-300">
+                                            <li>Fast invoice lookups (no need to query blockchain repeatedly)</li>
+                                            <li>Encrypted storage for merchant/payer addresses</li>
+                                            <li>Transaction history aggregation</li>
+                                        </ul>
+                                        <p className="text-sm text-gray-500 italic mt-4">
+                                            Note: Even if the database is compromised, merchant/payer addresses remain encrypted.
+                                        </p>
+                                    </div>
+                                </div>
+                            </GlassCard>
+
+                            <GlassCard className="p-8">
+                                <h2 className="text-2xl font-bold text-white mb-6">Security Model</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <h4 className="text-neon-accent font-bold mb-2">128-bit Salt</h4>
+                                        <p className="text-sm text-gray-400">
+                                            Provides 2^128 computational security. Brute-forcing is thermodynamically impossible.
+                                        </p>
+                                    </div>
+                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <h4 className="text-neon-accent font-bold mb-2">BHP256 Hash</h4>
+                                        <p className="text-sm text-gray-400">
+                                            Collision-resistant hash function optimized for SNARK circuits.
+                                        </p>
+                                    </div>
+                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <h4 className="text-neon-accent font-bold mb-2">AES-256 Encryption</h4>
+                                        <p className="text-sm text-gray-400">
+                                            Off-chain merchant addresses encrypted at rest. Decryption requires backend secret key.
+                                        </p>
+                                    </div>
+                                    <div className="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <h4 className="text-neon-accent font-bold mb-2">Double-Spend Protection</h4>
+                                        <p className="text-sm text-gray-400">
+                                            Aleo's native consensus prevents record reuse via serial number tracking.
+                                        </p>
+                                    </div>
+                                </div>
                             </GlassCard>
                         </motion.div>
                     )}

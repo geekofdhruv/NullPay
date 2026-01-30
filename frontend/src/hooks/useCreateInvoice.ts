@@ -14,7 +14,6 @@ export const useCreateInvoice = () => {
     const [amount, setAmount] = useState<number | ''>('');
     const [loading, setLoading] = useState(false);
     const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
-    const [expiry, setExpiry] = useState<string>('0');
     const [memo, setMemo] = useState<string>('');
     const [status, setStatus] = useState<string>('');
     const [invoiceType, setInvoiceType] = useState<InvoiceType>('standard');
@@ -52,7 +51,7 @@ export const useCreateInvoice = () => {
                 publicKey,
                 `${amountMicro}u64`,
                 salt,
-                expiry === '0' ? '0u32' : `${Number(expiry)}u32`,
+                '0u32', // expiry hardcoded to 0 (no expiry) as feature is disabled from frontend
                 typeInput
             ];
 
@@ -298,8 +297,6 @@ export const useCreateInvoice = () => {
     return {
         amount,
         setAmount,
-        expiry,
-        setExpiry,
         memo,
         setMemo,
         status,

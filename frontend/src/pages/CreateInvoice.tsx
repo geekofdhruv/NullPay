@@ -8,7 +8,6 @@ import { InvoiceCard } from '../components/invoice/InvoiceCard';
 export const CreateInvoice: React.FC = () => {
     const {
         amount, setAmount,
-        expiry, setExpiry,
         memo, setMemo,
         status, loading,
         invoiceData,
@@ -46,16 +45,15 @@ export const CreateInvoice: React.FC = () => {
                 />
             </div>
             <div className="w-full max-w-7xl mx-auto pt-12 px-6 relative z-10">
-                {/* CENTERED HEADER */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center justify-center text-center mb-16"
+                    className="flex flex-col items-center justify-center text-center mb-8"
                 >
                     <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tighter leading-none text-white">
                         Create <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Invoice</span>
                     </h1>
-                    <p className="text-gray-300 text-xl leading-relaxed max-w-2xl mb-8">
+                    <p className="text-gray-300 text-xl leading-relaxed max-w-2xl mb-2">
                         Generate a privacy-preserving invoice link to receive payments securely on the Aleo network.
                     </p>
                 </motion.div>
@@ -71,8 +69,6 @@ export const CreateInvoice: React.FC = () => {
                             <InvoiceForm
                                 amount={amount}
                                 setAmount={setAmount}
-                                expiry={expiry}
-                                setExpiry={setExpiry}
                                 memo={memo}
                                 setMemo={setMemo}
                                 handleCreate={handleCreate}
@@ -86,7 +82,6 @@ export const CreateInvoice: React.FC = () => {
                             <InvoiceCard
                                 invoiceData={invoiceData}
                                 resetInvoice={resetInvoice}
-                                expiry={expiry}
                                 memo={memo}
                             />
                         )}

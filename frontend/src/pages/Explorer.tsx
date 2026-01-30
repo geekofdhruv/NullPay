@@ -91,10 +91,7 @@ const Explorer = () => {
         if (e.key === 'Enter') handleSearch();
     };
 
-
-
-    // Derived Stats
-    const totalVolume = transactions.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    // const totalVolume = transactions.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
     const pendingCount = transactions.filter(t => t.status === 'PENDING').length;
     const settledCount = transactions.filter(t => t.status === 'SETTLED').length;
     const uniqueMerchants = new Set(transactions.map(t => t.merchant_address)).size;
@@ -104,7 +101,7 @@ const Explorer = () => {
         { label: 'Pending', value: pendingCount.toString(), trend: '' },
         { label: 'Settled', value: settledCount.toString(), trend: '' },
         { label: 'Active Merchants', value: uniqueMerchants.toString(), trend: '' },
-        { label: 'Total Volume', value: `${totalVolume.toFixed(2)}`, trend: '' },
+        // { label: 'Total Volume', value: `${totalVolume.toFixed(2)}`, trend: '' },
     ];
 
     const filteredTransactions = transactions.filter(t => {
