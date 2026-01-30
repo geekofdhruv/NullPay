@@ -1,5 +1,6 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+
 import { InvoiceData } from '../../types/invoice';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
