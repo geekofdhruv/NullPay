@@ -4,8 +4,14 @@
 
 NullPay is a decentralized invoice and payment system that leverages Aleo's zero-knowledge cryptography to enable private, verifiable transactions. Merchants can create invoices without revealing sensitive information on-chain, and payers can settle invoices while maintaining complete anonymity.
 
-**Live Application:** [Demo URL]  
+**Live Application:** [https://null-pay.vercel.app/](https://null-pay.vercel.app/)  
 **Smart Contract:** [`zk_pay_proofs_privacy_v7.aleo`](https://testnet.explorer.provable.com/program/zk_pay_proofs_privacy_v7.aleo)
+
+---
+
+## NullPay Architecture
+
+![NullPay Architecture](assets/architecture.svg)
 
 ---
 
